@@ -2,16 +2,16 @@
  * @(#) Copy.java
  */
 
-public class Copy extends Command
+public class Write extends Command
 {
 
-	public Copy(User user) {
+	public Write(User user) {
 		super(user);
 	}
 
 	public void execute( Selection position )
 	{
-		user.getCore().copy(position);
+		user.getCore().write(position);
 	}
 	
 }

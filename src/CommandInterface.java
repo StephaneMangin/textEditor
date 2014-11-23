@@ -4,6 +4,6 @@
 
 public interface CommandInterface {
 		
-	public Selection execute(Selection position);
+	public void execute(Selection position);
 	
 }

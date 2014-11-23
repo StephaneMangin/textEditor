@@ -10,9 +10,9 @@ public class Cut extends Command
 		// TODO Auto-generated constructor stub
 	}
 
-	public Selection execute( Selection position )
+	public void execute( Selection position )
 	{
-		return user.getCore().cut(position);
+		user.getCore().cut(position);
 	}
 	
 }

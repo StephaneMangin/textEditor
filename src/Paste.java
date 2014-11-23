@@ -10,9 +10,9 @@ public class Paste extends Command
 		// TODO Auto-generated constructor stub
 	}
 
-	public Selection execute( Selection position )
+	public void execute( Selection position )
 	{
-		return user.getCore().paste(position);
+		user.getCore().paste(position);
 	}
 	
 }

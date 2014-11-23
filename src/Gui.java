@@ -198,11 +198,15 @@ public class Gui extends JFrame implements ActionListener , KeyListener
 	}
 	
 	public void keyTyped(KeyEvent e) {
-		int code = e.getKeyCode();
-		String keytext = KeyEvent.getKeyText(code);
-		System.out.println("Key typed > " + code);
-		
-		Selection position = new Selection(jta.getSelectionStart(), jta.getSelectionEnd(), Character.toString(e.getKeyChar()));
+		String keytext = KeyEvent.getKeyText(e.getKeyCode());
+		System.out.println("Key typed > " + keytext);
+
+		Selection position = new Selection(jta.getSelectionStart(), jta.getSelectionEnd(), "");
+		if (jta.getSelectedText() != null) {
+			position.setContent(jta.getSelectedText());
+		} else {
+			position.setContent(Character.toString(e.getKeyChar()));
+		}
 					
 		if (keytext == "Supprimer") {
 			position.setContent("");
@@ -221,7 +225,12 @@ public class Gui extends JFrame implements ActionListener , KeyListener
 		else if (keytext == "Entrée") {
 			position.setContent("\n");
 		}
-		user.getCore().write(position);
+		
+		if (position.getStart() != position.getLength()) {
+			user.getCore().delete(position);
+		} else {
+			user.getCore().write(position);
+		}
 		chg = true;
 	}
 	

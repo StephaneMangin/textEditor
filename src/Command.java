@@ -10,9 +10,10 @@ public class Command implements CommandInterface
 	public Command(User user){
 		this.user = user;
 	}
-	
-	public Selection execute(Selection position) {
-		return position;
+
+	public void execute(Selection position) {
+		// TODO Auto-generated method stub
+		return;
 	}
 	
 }
