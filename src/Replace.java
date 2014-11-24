@@ -5,13 +5,13 @@
 public class Replace extends Command
 {
 
-	public Replace(User user) {
-		super(user);
+	public Replace(Core core) {
+		super(core);
 	}
 
 	public void execute( Selection position )
 	{
-		user.getCore().replace(position);
+		core.replace(position);
 	}
 	
 }

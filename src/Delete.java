@@ -5,13 +5,13 @@
 public class Delete extends Command
 {
 
-	public Delete(User user) {
-		super(user);
+	public Delete(Core core) {
+		super(core);
 	}
 
 	public void execute( Selection position )
 	{
-		user.getCore().delete(position);
+		core.delete(position);
 	}
 	
 }

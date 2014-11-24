@@ -5,10 +5,10 @@
 public class Command implements CommandInterface
 {
 
-	protected User user;
+	protected Core core;
 	
-	public Command(User user){
-		this.user = user;
+	public Command(Core core){
+		this.core = core;
 	}
 
 	public void execute(Selection position) {

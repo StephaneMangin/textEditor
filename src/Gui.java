@@ -3,14 +3,18 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.util.Observable;
 
-public class Gui extends JFrame implements ActionListener , KeyListener
-{
-	/**
-	 * 
-	 */
+
+public class Gui extends JFrame implements GuiInterface {
+
 	private static final long serialVersionUID = 1L;
-	private User user;
+	private Copy copy;
+	private Paste paste;
+	private Cut cut;
+	private Insert insert;
+	private Delete delete;
+	private Replace replace;
 	private JTextArea jta;
 	private JScrollPane jscroll;
 
@@ -26,47 +30,76 @@ public class Gui extends JFrame implements ActionListener , KeyListener
 
 	private String fname;
 	private boolean chg;
+	
+	private class TextArea extends JTextArea implements GuiInterface.TextArea {
 
-	private class textArea extends JTextArea {
-
-		/**
-		 * 
-		 */
 		private static final long serialVersionUID = 1L;
-				
+		
+		@Override
+		public void insert(String str, int pos) {
+			Selection position = new Selection(pos, pos, str);
+			Gui.this.insert.execute(position);
+		}
+
+		@Override
+		public void append(String str) {
+			Selection position = new Selection(getCaretPosition(), getCaretPosition(), str);
+			Gui.this.insert.execute(position);
+		}
+
+		@Override
+		public void replaceRange(String str, int start, int end) {
+			Selection position = new Selection(start, end, str);
+			Gui.this.replace.execute(position);
+		}
+
+		@Override
+		public void replaceSelection(String str) {
+			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), str);
+			// In all cases, JTextArea call this method whatever the currently operation
+			// We have to look at positions to know about the current operation.
+			// It can be either a simple char append or a replacement.
+			if (position.getStart() == position.getLength()) {
+				Gui.this.insert.execute(position);
+			} else {
+				Gui.this.replace.execute(position);
+			}
+		}
+
+		@Override
 		public void cut() {
-			Selection position = new Selection(jta.getSelectionStart(), jta.getSelectionEnd(), "");
-			System.out.println("Cut !");
-			user.cut.execute(position);
-			super.cut();
+			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText());
+			Gui.this.cut.execute(position);
 		}
-		
+
+		@Override
 		public void paste() {
-			Selection position = new Selection(jta.getSelectionStart(), jta.getSelectionEnd(), jta.getSelectedText());
-			System.out.println("Paste !");
-			user.paste.execute(position);
-			super.paste();
+			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText());
+			Gui.this.paste.execute(position);
 		}
-		
+
+		@Override
 		public void copy() {
-			Selection position = new Selection(jta.getSelectionStart(), jta.getSelectionEnd(), jta.getSelectedText());
-			System.out.println("Copy !");
-			user.copy.execute(position);
-			super.copy();
+			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText());
+			Gui.this.copy.execute(position);
 		}
 
 	}
 	
-	public Gui(String name, User user)
-	{
-		this.user = user;
+	public Gui(String name, Copy copy, Paste paste, Cut cut, Insert insert, Delete delete, Replace replace) {
+		this.copy = copy;
+		this.paste = paste;
+		this.cut = cut;
+		this.insert = insert;
+		this.delete = delete;
+		this.replace = replace;
+
 		fname = "";
 		chg = false;
 		setLayout(new BorderLayout());
 
-		jta = new textArea();
-		jta.setFont(new Font("Comic Sans MS", Font.PLAIN , 24) );
-		jta.addKeyListener(this);
+		jta = new TextArea();
+		jta.setFont(new Font("Arial", Font.PLAIN , 16) );
 
 		jscroll = new JScrollPane(jta);
 		add(jscroll, BorderLayout.CENTER );
@@ -85,9 +118,8 @@ public class Gui extends JFrame implements ActionListener , KeyListener
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 
 	}
-
-	private void initIcons()
-	{
+	
+	private void initIcons() {
 		iNew  = new ImageIcon("images/new.gif");
 		iOpen  = new ImageIcon("images/open.gif");
 		iSave  = new ImageIcon("images/save.gif");
@@ -96,8 +128,7 @@ public class Gui extends JFrame implements ActionListener , KeyListener
 		iPaste  = new ImageIcon("images/paste.gif");
 	}
 
-	private void initMenu()
-	{
+	private void initMenu() {
 		mbar = new JMenuBar();
 
 		file = new JMenu("File");
@@ -165,8 +196,7 @@ public class Gui extends JFrame implements ActionListener , KeyListener
 		eselall.setAccelerator(k);
 	}
 
-	private void initToolbar()
-	{
+	private void initToolbar() {
 		bttnnew = new JButton(iNew);
 		bttnopen = new JButton(iOpen);
 		bttnsave = new JButton(iSave);
@@ -190,56 +220,31 @@ public class Gui extends JFrame implements ActionListener , KeyListener
 		jtbar.add(bttncopy);
 		jtbar.add(bttnpaste);
 	}
-	
+
+	@Override
 	public void keyPressed(KeyEvent e) {
 	}
-	
+
+	@Override
 	public void keyReleased(KeyEvent e) {
 	}
-	
+
+	@Override
 	public void keyTyped(KeyEvent e) {
 		String keytext = KeyEvent.getKeyText(e.getKeyCode());
-		System.out.println("Key typed > " + keytext);
-
-		Selection position = new Selection(jta.getSelectionStart(), jta.getSelectionEnd(), "");
-		if (jta.getSelectedText() != null) {
-			position.setContent(jta.getSelectedText());
-		} else {
-			position.setContent(Character.toString(e.getKeyChar()));
-		}
+		System.out.println(e.getKeyChar());
 					
 		if (keytext == "Supprimer") {
-			position.setContent("");
-			position.setLength(position.getLength() + 1);
-			user.getCore().delete(position);
+			jta.replaceRange("", jta.getSelectionStart(), 1);
 		}
 		else if (keytext == "Retour arrière") {
-			position.setContent("");
-			position.setLength(position.getLength() + 1);
-			user.getCore().delete(position);
-		}
-		else if (keytext == "Tab") {
-			position.setContent("\t");
-			user.getCore().write(position);
-		}
-		else if (keytext == "Entrée") {
-			position.setContent("\n");
-		}
-		
-		if (position.getStart() != position.getLength()) {
-			user.getCore().delete(position);
-		} else {
-			user.getCore().write(position);
+			jta.replaceRange("", jta.getSelectionStart() - 1, 1);
 		}
 		chg = true;
 	}
-	
-	public void exit(){
-		System.exit(0);
-	}
-	
-	public void actionPerformed(ActionEvent e)
-	{
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
 		if(e.getSource().equals(bttncut) || e.getSource().equals(ecut) )
 		{
 			jta.cut();
@@ -264,27 +269,26 @@ public class Gui extends JFrame implements ActionListener , KeyListener
 		}
 		else if(e.getSource().equals(fopen))
 		{
-			fileopen();
+			open();
 		}
 		else if(e.getSource().equals(fsave))
 		{
-			filesave();
+			save();
 		}
 		else if(e.getSource().equals(fexit))
 		{
-			fileexit();
+			exit();
 		}
 	}
 
-	private void fileexit()
-	{
+	public void exit() {
 		if(chg == true)
 		{
 			int res;
 			res = JOptionPane.showConfirmDialog(this, "Do You Want to Save Changes", "File Exit", JOptionPane.YES_NO_CANCEL_OPTION );
 			if(res == JOptionPane.YES_OPTION)
 			{
-				filesave();
+				save();
 			}
 			else if(res == JOptionPane.CANCEL_OPTION)
 			{
@@ -294,26 +298,21 @@ public class Gui extends JFrame implements ActionListener , KeyListener
 		System.exit(0);
 	}
 
-	private void fileopen()
-	{
-
+	public void open() {
 		JFileChooser jfc = new JFileChooser();
 		jfc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 
 		int res = jfc.showOpenDialog(this);
-		if(res == JFileChooser.APPROVE_OPTION)
-		{
+		if(res == JFileChooser.APPROVE_OPTION) {
 			File f = jfc.getSelectedFile();
-			try
-			{
+			try {
 				FileReader fr = new FileReader(f);
 				BufferedReader br = new BufferedReader(fr);
 
 				String data;
 				jta.setText("");
 
-				while( (data =br.readLine()) != null)
-				{
+				while( (data =br.readLine()) != null) {
 					data = data + "n";
 					jta.append(data);
 				}
@@ -321,57 +320,49 @@ public class Gui extends JFrame implements ActionListener , KeyListener
 				br.close();
 				fr.close();
 
-			}
-			catch(IOException e)
-			{
-				JOptionPane.showMessageDialog
-				(
+			} catch(IOException e) {
+				JOptionPane.showMessageDialog(
 						this , e.getMessage() , "File Open Error",
-						JOptionPane.ERROR_MESSAGE
-						);
+						JOptionPane.ERROR_MESSAGE);
 			}
 		}
 	}
 
-	private void filesave()
-	{
-		if(fname.equals(""))
-		{
+	public void save() {
+		if(fname.equals("")) {
 			JFileChooser jfc = new JFileChooser();
 			jfc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
 			int res = jfc.showSaveDialog(this);
-			if(res == JFileChooser.APPROVE_OPTION)
-			{
+			if(res == JFileChooser.APPROVE_OPTION) {
 				File f = jfc.getSelectedFile();
 				fname = f.getAbsolutePath();
-				filewrite();
+				write();
 			}
-		}
-		else
-			filewrite();
+		} else write();
 	}
 
-	private void filewrite()
-	{
-		try
-		{
+	public void write() {
+		try {
 			FileWriter fw = new FileWriter(fname);
 
 			fw.write(jta.getText());
 			fw.flush();
 			fw.close();
 			chg = false;
-		}
-		catch(IOException e)
-		{
-			JOptionPane.showMessageDialog
-			(
+		} catch(IOException e) {
+			JOptionPane.showMessageDialog(
 					this , e.getMessage() , "File Save Error",
-					JOptionPane.ERROR_MESSAGE
-					);
+					JOptionPane.ERROR_MESSAGE);
 		}
 
+	}
+
+	@Override
+	public void update(Observable observable, Object objectConcerne) {
+		if (observable.toString() != jta.getText()) {
+			jta.setText(observable.toString());
+		}
 	}
 
 }

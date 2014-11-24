@@ -1,17 +1,22 @@
+import java.util.Observable;
+import java.util.Stack;
+
 /**
  * @(#) Core.java
  */
 
-public class Core implements CoreInterface
+public class Core extends Observable implements CoreInterface
 {
-	private Buffer buffer = new Buffer();
-	private PressePapier prpa = new PressePapier();
+	private StringBuffer buffer = new StringBuffer();
+	private String clipboard = new String();
 	
-	public void write(Selection position)
+	public void insert(Selection position)
 	{
-		buffer.write(position.getStart(), position.getContent());
+		buffer.insert(position.getStart(), position.getContent());
 		// Mise à jour de la position
 		position.jump();
+		setChanged();
+		notifyObservers();
 	}
 	
 	public void delete(Selection position)
@@ -19,35 +24,36 @@ public class Core implements CoreInterface
 		buffer.delete(position.getStart(), position.getLength());
 		// Mise à jour de la position
 		position.jump();
+		setChanged();
+		notifyObservers();
 	}
 	
 	public void replace(Selection position)
 	{
 		delete(position);
-		write(position);
+		insert(position);
 	}
 	
 	public void cut( Selection position )
 	{
-		prpa.put(position.getContent());
+		clipboard = position.getContent();
 		delete(position);
 		// Mise à jour de la position
-		position.jump();
 	}
 	
 	public void copy( Selection position )
 	{
-		prpa.put(position.getContent());
+		clipboard = position.getContent();
 	}
 	
 	public void paste( Selection position )
 	{
-		position.setContent(prpa.pull());
-		write(position);
+		position.setContent(clipboard);
+		insert(position);
 	}
 	
 	public String toString(){
-		return this.buffer.toString();
+		return buffer.toString();
 	}
 
 }

@@ -5,14 +5,13 @@
 public class Cut extends Command
 {
 
-	public Cut(User user) {
-		super(user);
-		// TODO Auto-generated constructor stub
+	public Cut(Core core) {
+		super(core);
 	}
 
 	public void execute( Selection position )
 	{
-		user.getCore().cut(position);
+		core.cut(position);
 	}
 	
 }
