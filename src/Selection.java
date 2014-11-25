@@ -2,27 +2,24 @@
  * @(#) Selection.java
  */
 
-public class Selection
-{
+public class Selection {
 	
 	private Integer start;
-	
-	private Integer length;
-	
-	private String content;
+	private Integer end;
+	private String str;
 
-	public Selection(Integer start, Integer length, String content) {
+	public Selection(Integer start, Integer end, String str) {
 		setStart(start);
-		setLength(length);
-		setContent(content);
+		setEnd(end);
+		setContent(str);
 	}
 
 	public String getContent() {
-		return content;
+		return str;
 	}
 
 	public void setContent(String content) {
-		this.content = content;
+		this.str = content;
 	}
 	
 	public Integer getStart() {
@@ -33,26 +30,26 @@ public class Selection
 		this.start = start;
 	}
 
-	public Integer getLength() {
-		return length;
+	public Integer getEnd() {
+		return end;
 	}
 
-	public void setLength(Integer length) {
-		this.length = length;
+	public void setEnd(Integer end) {
+		this.end = end;
 	}
 
 	public void jump() {
-		start = start + content.length();
+		start = start + str.length();
 		reset();
 	}
 
 	public void reset() {
-		length = 0;
-		content = null;
+		end = 0;
+		str = "";
 	}
 	
 	public String toString() {
-		return start + "->" + length + "='" + content + "'";
+		return start + "->" + end + "='" + str + "'";
 		
 	}
 }

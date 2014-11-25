@@ -1,4 +1,5 @@
 import java.util.Observer;
+import java.util.logging.*;
 
 /**
  * @(#) User.java
@@ -13,6 +14,7 @@ public class User {
 	private static Replace replace;
 	private static Gui gui;
 	private static Core core;
+	protected static Logger logger;
 	
 	public Core getCore() {
 		return core;
@@ -21,7 +23,7 @@ public class User {
 	public Gui getGui() {
 		return gui;
 	}
-
+	
 	public static void main(String[] args) {
 		core = new Core();
 		copy = new Copy(core);

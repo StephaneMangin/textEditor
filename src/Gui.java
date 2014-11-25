@@ -4,17 +4,19 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.util.Observable;
+import java.util.Observer;
 
 
-public class Gui extends JFrame implements GuiInterface {
+public class Gui extends JFrame implements Observer, ActionListener, KeyListener {
 
 	private static final long serialVersionUID = 1L;
+	private Cut cut;
 	private Copy copy;
 	private Paste paste;
-	private Cut cut;
 	private Insert insert;
 	private Delete delete;
 	private Replace replace;
+
 	private JTextArea jta;
 	private JScrollPane jscroll;
 
@@ -30,63 +32,61 @@ public class Gui extends JFrame implements GuiInterface {
 
 	private String fname;
 	private boolean chg;
+	private Log logger;
 	
-	private class TextArea extends JTextArea implements GuiInterface.TextArea {
+	private class TextArea extends JTextArea {
 
 		private static final long serialVersionUID = 1L;
 		
-		@Override
 		public void insert(String str, int pos) {
-			Selection position = new Selection(pos, pos, str);
+			Selection position = new Selection(pos, 0, str);
 			Gui.this.insert.execute(position);
 		}
 
-		@Override
+		public void delete(int start, int end) {
+			Selection position = new Selection(start, end, "");
+			Gui.this.delete.execute(position);
+		}
 		public void append(String str) {
 			Selection position = new Selection(getCaretPosition(), getCaretPosition(), str);
 			Gui.this.insert.execute(position);
 		}
 
-		@Override
 		public void replaceRange(String str, int start, int end) {
 			Selection position = new Selection(start, end, str);
 			Gui.this.replace.execute(position);
 		}
 
-		@Override
 		public void replaceSelection(String str) {
 			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), str);
 			// In all cases, JTextArea call this method whatever the currently operation
 			// We have to look at positions to know about the current operation.
 			// It can be either a simple char append or a replacement.
-			if (position.getStart() == position.getLength()) {
+			if (position.getStart() == position.getEnd()) {
 				Gui.this.insert.execute(position);
 			} else {
 				Gui.this.replace.execute(position);
 			}
 		}
 
-		@Override
 		public void cut() {
 			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText());
 			Gui.this.cut.execute(position);
 		}
 
-		@Override
 		public void paste() {
 			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText());
 			Gui.this.paste.execute(position);
 		}
 
-		@Override
 		public void copy() {
 			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText());
 			Gui.this.copy.execute(position);
 		}
-
 	}
 	
 	public Gui(String name, Copy copy, Paste paste, Cut cut, Insert insert, Delete delete, Replace replace) {
+		logger = new Log(this);
 		this.copy = copy;
 		this.paste = paste;
 		this.cut = cut;
@@ -100,6 +100,7 @@ public class Gui extends JFrame implements GuiInterface {
 
 		jta = new TextArea();
 		jta.setFont(new Font("Arial", Font.PLAIN , 16) );
+		jta.addKeyListener(this);
 
 		jscroll = new JScrollPane(jta);
 		add(jscroll, BorderLayout.CENTER );
@@ -116,7 +117,6 @@ public class Gui extends JFrame implements GuiInterface {
 		setVisible(true);
 
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
-
 	}
 	
 	private void initIcons() {
@@ -130,7 +130,6 @@ public class Gui extends JFrame implements GuiInterface {
 
 	private void initMenu() {
 		mbar = new JMenuBar();
-
 		file = new JMenu("File");
 		edit = new JMenu("Edit");
 
@@ -141,7 +140,6 @@ public class Gui extends JFrame implements GuiInterface {
 		fopen = new JMenuItem("Open", iOpen);
 		fsave = new JMenuItem("Save",iSave);
 		fexit = new JMenuItem("Exit");
-
 		ecut=new JMenuItem("cut", iCut);
 		ecopy=new JMenuItem("copy", iCopy);
 		epaste=new JMenuItem("Paste", iPaste);
@@ -152,13 +150,11 @@ public class Gui extends JFrame implements GuiInterface {
 		file.add(fsave);
 		file.addSeparator();
 		file.add(fexit);
-
 		edit.add(ecut);
 		edit.add(ecopy);
 		edit.add(epaste);
 		edit.addSeparator();
 		edit.add(eselall);
-
 		mbar.add(file);
 		mbar.add(edit);
 
@@ -166,32 +162,24 @@ public class Gui extends JFrame implements GuiInterface {
 		fopen.addActionListener(this);
 		fsave.addActionListener(this);
 		fexit.addActionListener(this);
-
 		ecut.addActionListener(this);
 		ecopy.addActionListener(this);
 		epaste.addActionListener(this);
 		eselall.addActionListener(this);
 
-		KeyStroke k ;
-
+		KeyStroke k;
 		k = KeyStroke.getKeyStroke('N', java.awt.Event.CTRL_MASK);
 		fnew.setAccelerator(k);
-
 		k = KeyStroke.getKeyStroke('O', java.awt.Event.CTRL_MASK);
 		fopen.setAccelerator(k);
-
 		k = KeyStroke.getKeyStroke('S', java.awt.Event.CTRL_MASK);
 		fsave.setAccelerator(k);
-
 		k = KeyStroke.getKeyStroke('X', java.awt.Event.CTRL_MASK);
 		ecut.setAccelerator(k);
-
 		k = KeyStroke.getKeyStroke('C', java.awt.Event.CTRL_MASK);
 		ecopy.setAccelerator(k);
-
 		k = KeyStroke.getKeyStroke('V', java.awt.Event.CTRL_MASK);
 		epaste.setAccelerator(k);
-
 		k = KeyStroke.getKeyStroke('A', java.awt.Event.CTRL_MASK);
 		eselall.setAccelerator(k);
 	}
@@ -203,6 +191,7 @@ public class Gui extends JFrame implements GuiInterface {
 		bttncut  = new JButton(iCut);
 		bttncopy = new JButton(iCopy);
 		bttnpaste = new JButton(iPaste);
+		jtbar = new JToolBar();
 
 		bttnnew.addActionListener(this);
 		bttnopen.addActionListener(this);
@@ -211,87 +200,76 @@ public class Gui extends JFrame implements GuiInterface {
 		bttncopy.addActionListener(this);
 		bttnpaste.addActionListener(this);
 
-		jtbar = new JToolBar();
 		jtbar.add(bttnnew);
 		jtbar.add(bttnopen);
 		jtbar.add(bttnsave);
-		jtbar.addSeparator();
 		jtbar.add(bttncut);
 		jtbar.add(bttncopy);
 		jtbar.add(bttnpaste);
+		jtbar.addSeparator();
 	}
 
-	@Override
 	public void keyPressed(KeyEvent e) {
-	}
-
-	@Override
-	public void keyReleased(KeyEvent e) {
-	}
-
-	@Override
-	public void keyTyped(KeyEvent e) {
-		String keytext = KeyEvent.getKeyText(e.getKeyCode());
-		System.out.println(e.getKeyChar());
-					
-		if (keytext == "Supprimer") {
-			jta.replaceRange("", jta.getSelectionStart(), 1);
-		}
-		else if (keytext == "Retour arrière") {
-			jta.replaceRange("", jta.getSelectionStart() - 1, 1);
+		int keyCode = e.getKeyCode();
+		if (keyCode == KeyEvent.VK_DELETE && jta.getCaretPosition() != jta.getText().length()) {
+			// The position indices are thus before action is called
+			// We have to add -1 to be in the current position
+			// So no need for delete via DELETE, because the right position is thus before action
+			((TextArea) jta).delete(jta.getCaretPosition(), 1);
 		}
 		chg = true;
 	}
 
-	@Override
+	public void keyReleased(KeyEvent e) {
+		int keyCode = e.getKeyCode();
+		if (keyCode == KeyEvent.VK_BACK_SPACE && jta.getCaretPosition() != 1) {
+			((TextArea) jta).delete(jta.getCaretPosition(), 1);
+		}
+		chg = true;
+	}
+	
+	public void keyTyped(KeyEvent e) {
+		chg = true;
+	}
+	
 	public void actionPerformed(ActionEvent e) {
-		if(e.getSource().equals(bttncut) || e.getSource().equals(ecut) )
-		{
+		
+		if(e.getSource().equals(bttncut) || e.getSource().equals(ecut) ) {
 			jta.cut();
 		}
-		else if(e.getSource().equals(bttncopy) || e.getSource().equals(ecopy))
-		{
+		else if(e.getSource().equals(bttncopy) || e.getSource().equals(ecopy)) {
 			jta.copy();
 		}
-		else if(e.getSource().equals(bttnpaste) || e.getSource().equals(epaste))
-		{
+		else if(e.getSource().equals(bttnpaste) || e.getSource().equals(epaste)) {
 			jta.paste();
 		}
-		else if(e.getSource().equals(eselall))
-		{
+		else if(e.getSource().equals(eselall)) {
 			jta.selectAll();
 		}
-		else if(e.getSource().equals(fnew))
-		{
+		else if(e.getSource().equals(fnew)) {
 			fname = "";
 			chg = false;
 			jta.setText("");
 		}
-		else if(e.getSource().equals(fopen))
-		{
+		else if(e.getSource().equals(fopen)) {
 			open();
 		}
-		else if(e.getSource().equals(fsave))
-		{
+		else if(e.getSource().equals(fsave)) {
 			save();
 		}
-		else if(e.getSource().equals(fexit))
-		{
+		else if(e.getSource().equals(fexit)) {
 			exit();
 		}
 	}
 
 	public void exit() {
-		if(chg == true)
-		{
+		if(chg == true) {
 			int res;
 			res = JOptionPane.showConfirmDialog(this, "Do You Want to Save Changes", "File Exit", JOptionPane.YES_NO_CANCEL_OPTION );
-			if(res == JOptionPane.YES_OPTION)
-			{
+			if(res == JOptionPane.YES_OPTION) {
 				save();
 			}
-			else if(res == JOptionPane.CANCEL_OPTION)
-			{
+			else if(res == JOptionPane.CANCEL_OPTION) {
 				return;
 			}
 		}
@@ -322,8 +300,8 @@ public class Gui extends JFrame implements GuiInterface {
 
 			} catch(IOException e) {
 				JOptionPane.showMessageDialog(
-						this , e.getMessage() , "File Open Error",
-						JOptionPane.ERROR_MESSAGE);
+					this , e.getMessage() , "File Open Error",
+					JOptionPane.ERROR_MESSAGE);
 			}
 		}
 	}
@@ -358,11 +336,9 @@ public class Gui extends JFrame implements GuiInterface {
 
 	}
 
-	@Override
 	public void update(Observable observable, Object objectConcerne) {
 		if (observable.toString() != jta.getText()) {
 			jta.setText(observable.toString());
 		}
 	}
-
 }
