@@ -53,6 +53,7 @@ public class Log {
 	}
 	
 	public void log(Level level, String msg) {
+		System.out.println(level.getName() + " " + msg);
 		log.logp(level, getClassName(), getMethodName(), msg);
 	}
 	

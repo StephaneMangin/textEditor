@@ -39,7 +39,7 @@ public class Gui extends JFrame implements Observer, ActionListener, KeyListener
 		private static final long serialVersionUID = 1L;
 		
 		public void insert(String str, int pos) {
-			Selection position = new Selection(pos, 0, str);
+			Selection position = new Selection(pos, pos, str);
 			Gui.this.insert.execute(position);
 		}
 
@@ -167,21 +167,21 @@ public class Gui extends JFrame implements Observer, ActionListener, KeyListener
 		epaste.addActionListener(this);
 		eselall.addActionListener(this);
 
-		KeyStroke k;
-		k = KeyStroke.getKeyStroke('N', java.awt.Event.CTRL_MASK);
-		fnew.setAccelerator(k);
-		k = KeyStroke.getKeyStroke('O', java.awt.Event.CTRL_MASK);
-		fopen.setAccelerator(k);
-		k = KeyStroke.getKeyStroke('S', java.awt.Event.CTRL_MASK);
-		fsave.setAccelerator(k);
-		k = KeyStroke.getKeyStroke('X', java.awt.Event.CTRL_MASK);
-		ecut.setAccelerator(k);
-		k = KeyStroke.getKeyStroke('C', java.awt.Event.CTRL_MASK);
-		ecopy.setAccelerator(k);
-		k = KeyStroke.getKeyStroke('V', java.awt.Event.CTRL_MASK);
-		epaste.setAccelerator(k);
-		k = KeyStroke.getKeyStroke('A', java.awt.Event.CTRL_MASK);
-		eselall.setAccelerator(k);
+//		KeyStroke k;
+//		k = KeyStroke.getKeyStroke('N', java.awt.Event.CTRL_MASK);
+//		fnew.setAccelerator(k);
+//		k = KeyStroke.getKeyStroke('O', java.awt.Event.CTRL_MASK);
+//		fopen.setAccelerator(k);
+//		k = KeyStroke.getKeyStroke('S', java.awt.Event.CTRL_MASK);
+//		fsave.setAccelerator(k);
+//		k = KeyStroke.getKeyStroke('X', java.awt.Event.CTRL_MASK);
+//		ecut.setAccelerator(k);
+//		k = KeyStroke.getKeyStroke('C', java.awt.Event.CTRL_MASK);
+//		ecopy.setAccelerator(k);
+//		k = KeyStroke.getKeyStroke('V', java.awt.Event.CTRL_MASK);
+//		epaste.setAccelerator(k);
+//		k = KeyStroke.getKeyStroke('A', java.awt.Event.CTRL_MASK);
+//		eselall.setAccelerator(k);
 	}
 
 	private void initToolbar() {
@@ -210,26 +210,23 @@ public class Gui extends JFrame implements Observer, ActionListener, KeyListener
 	}
 
 	public void keyPressed(KeyEvent e) {
-		int keyCode = e.getKeyCode();
-		if (keyCode == KeyEvent.VK_DELETE && jta.getCaretPosition() != jta.getText().length()) {
-			// The position indices are thus before action is called
-			// We have to add -1 to be in the current position
-			// So no need for delete via DELETE, because the right position is thus before action
-			((TextArea) jta).delete(jta.getCaretPosition(), 1);
-		}
-		chg = true;
 	}
 
 	public void keyReleased(KeyEvent e) {
-		int keyCode = e.getKeyCode();
-		if (keyCode == KeyEvent.VK_BACK_SPACE && jta.getCaretPosition() != 1) {
-			((TextArea) jta).delete(jta.getCaretPosition(), 1);
-		}
-		chg = true;
 	}
 	
 	public void keyTyped(KeyEvent e) {
 		chg = true;
+		int keyCode = e.getKeyCode();
+		if (keyCode == KeyEvent.VK_BACK_SPACE && jta.getCaretPosition() != 1) {
+			// The position indices are thus before action is called
+			// We have to add -1 to be in the current position
+			// So no need for delete via DELETE, because the right position is thus before action
+			((TextArea) jta).delete(jta.getCaretPosition(), jta.getCaretPosition() + 1);
+		}
+		if (keyCode == KeyEvent.VK_DELETE && jta.getCaretPosition() != jta.getText().length()) {
+			((TextArea) jta).delete(jta.getCaretPosition(), jta.getCaretPosition() + 1);
+		}
 	}
 	
 	public void actionPerformed(ActionEvent e) {
@@ -336,8 +333,8 @@ public class Gui extends JFrame implements Observer, ActionListener, KeyListener
 
 	}
 
-	public void update(Observable observable, Object objectConcerne) {
-		if (observable.toString() != jta.getText()) {
+	public void update(Observable observable, Object obj) {
+		if (obj.toString() != jta.getText()) {
 			jta.setText(observable.toString());
 		}
 	}

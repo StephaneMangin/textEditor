@@ -1,8 +1,10 @@
+import java.util.Observable;
+
 /**
  * @(#) Selection.java
  */
 
-public class Selection {
+public class Selection extends Observable {
 	
 	private Integer start;
 	private Integer end;
@@ -20,6 +22,8 @@ public class Selection {
 
 	public void setContent(String content) {
 		this.str = content;
+		setChanged();
+		notifyObservers();
 	}
 	
 	public Integer getStart() {
@@ -28,6 +32,8 @@ public class Selection {
 
 	public void setStart(Integer start) {
 		this.start = start;
+		setChanged();
+		notifyObservers();
 	}
 
 	public Integer getEnd() {
@@ -36,16 +42,22 @@ public class Selection {
 
 	public void setEnd(Integer end) {
 		this.end = end;
+		setChanged();
+		notifyObservers();
 	}
 
 	public void jump() {
 		start = start + str.length();
 		reset();
+		setChanged();
+		notifyObservers();
 	}
 
 	public void reset() {
 		end = 0;
 		str = "";
+		setChanged();
+		notifyObservers();
 	}
 	
 	public String toString() {

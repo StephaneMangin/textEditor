@@ -1,4 +1,12 @@
+import java.awt.BorderLayout;
+import java.awt.Font;
 import java.util.Observable;
+import java.util.Observer;
+
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
 
 /**
  * @(#) Core.java
@@ -6,12 +14,42 @@ import java.util.Observable;
 
 public class Core extends Observable implements CoreInterface {
 	
+	public class InternalGui extends JFrame implements Observer {
+
+		private static final long serialVersionUID = 1L;
+		private JTextArea jta;
+		private JTextField jtf;
+		private JScrollPane jscroll;
+
+		public InternalGui(Core core) {
+			setLayout(new BorderLayout());
+
+			jta = new JTextArea();
+			jtf = new JTextField();
+			jta.setFont(new Font("Arial", Font.PLAIN , 16) );
+
+			jscroll = new JScrollPane(jta);
+			add(jtf, BorderLayout.NORTH);
+			add(jscroll, BorderLayout.CENTER);
+			setSize(500,300);
+			setVisible(true);
+			setDefaultCloseOperation(EXIT_ON_CLOSE);
+			core.addObserver(this);
+		}
+
+		public void update(Observable core, Object obj) {
+			jta.setText(obj.toString());
+		}
+	}
+	
 	private StringBuffer buffer = new StringBuffer();
 	private String clipboard = new String();
 	private Log logger;
+	private InternalGui gui;
 	
 	Core () {
 		logger = new Log(this);
+		gui = new InternalGui(this);
 	}
 	
 	public void insert(Selection position) {
@@ -20,7 +58,7 @@ public class Core extends Observable implements CoreInterface {
 		// Mise à jour de la position
 		position.jump();
 		setChanged();
-		notifyObservers();
+		notifyObservers(buffer);
 	}
 	
 	public void delete(Selection position) {
@@ -32,7 +70,7 @@ public class Core extends Observable implements CoreInterface {
 		// Mise à jour de la position
 		position.reset();
 		setChanged();
-		notifyObservers();
+		notifyObservers(buffer);
 	}
 	
 	public void replace(Selection position) {
