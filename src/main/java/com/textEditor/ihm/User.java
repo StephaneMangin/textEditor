@@ -1,5 +1,10 @@
+package com.textEditor.ihm;
+
 import java.util.Observer;
 import java.util.logging.*;
+
+import com.textEditor.commands.*;
+import com.textEditor.core.*;
 
 /**
  * @(#) User.java
@@ -15,7 +20,7 @@ public class User {
 	private static Gui gui;
 	private static Core core;
 	protected static Logger logger;
-	
+
 	public Core getCore() {
 		return core;
 	}
@@ -23,7 +28,7 @@ public class User {
 	public Gui getGui() {
 		return gui;
 	}
-	
+
 	public static void main(String[] args) {
 		core = new Core();
 		copy = new Copy(core);
@@ -32,8 +37,9 @@ public class User {
 		insert = new Insert(core);
 		delete = new Delete(core);
 		replace = new Replace(core);
-		gui = new Gui("Basic Text Editor", copy, paste, cut, insert, delete, replace);
+		gui = new Gui("Basic Text Editor", copy, paste, cut, insert, delete,
+				replace);
 		core.addObserver((Observer) gui);
 	}
-	
+
 }

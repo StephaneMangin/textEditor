@@ -1,3 +1,5 @@
+package com.textEditor.core;
+
 import java.util.Observable;
 
 /**
@@ -5,7 +7,7 @@ import java.util.Observable;
  */
 
 public class Selection extends Observable {
-	
+
 	private Integer start;
 	private Integer end;
 	private String str;
@@ -25,7 +27,7 @@ public class Selection extends Observable {
 		setChanged();
 		notifyObservers();
 	}
-	
+
 	public Integer getStart() {
 		return start;
 	}
@@ -59,9 +61,9 @@ public class Selection extends Observable {
 		setChanged();
 		notifyObservers();
 	}
-	
+
 	public String toString() {
 		return start + "->" + end + "='" + str + "'";
-		
+
 	}
 }

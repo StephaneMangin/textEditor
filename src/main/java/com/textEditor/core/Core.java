@@ -1,3 +1,5 @@
+package com.textEditor.core;
+
 import java.awt.BorderLayout;
 import java.awt.Font;
 import java.util.Observable;
@@ -8,12 +10,14 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import com.textEditor.log.Log;
+
 /**
  * @(#) Core.java
  */
 
 public class Core extends Observable implements CoreInterface {
-	
+
 	public class InternalGui extends JFrame implements Observer {
 
 		private static final long serialVersionUID = 1L;
@@ -26,12 +30,12 @@ public class Core extends Observable implements CoreInterface {
 
 			jta = new JTextArea();
 			jtf = new JTextField();
-			jta.setFont(new Font("Arial", Font.PLAIN , 16) );
+			jta.setFont(new Font("Arial", Font.PLAIN, 16));
 
 			jscroll = new JScrollPane(jta);
 			add(jtf, BorderLayout.NORTH);
 			add(jscroll, BorderLayout.CENTER);
-			setSize(500,300);
+			setSize(500, 300);
 			setVisible(true);
 			setDefaultCloseOperation(EXIT_ON_CLOSE);
 			core.addObserver(this);
@@ -41,71 +45,72 @@ public class Core extends Observable implements CoreInterface {
 			jta.setText(obj.toString());
 		}
 	}
-	
+
 	private StringBuffer buffer = new StringBuffer();
 	private String clipboard = new String();
 	private Log logger;
 	private InternalGui gui;
-	
-	Core () {
+
+	public Core() {
 		logger = new Log(this);
 		gui = new InternalGui(this);
 	}
-	
+
 	public void insert(Selection position) {
 		buffer.insert(position.getStart(), position.getContent());
-		logger.fine("insert = " + position.toString());
+		logger.fine(position.toString());
 		// Mise à jour de la position
 		position.jump();
 		setChanged();
 		notifyObservers(buffer);
 	}
-	
+
 	public void delete(Selection position) {
 		assert position.getStart() <= buffer.length();
 		assert position.getStart() + position.getEnd() <= buffer.length();
 		// buffer end argument is the last index of the string, not the length.
-		buffer.delete(position.getStart(), position.getStart() + position.getEnd());
-		logger.fine("delete = " + position.toString());
+		buffer.delete(position.getStart(),
+				position.getStart() + position.getEnd());
+		logger.fine(position.toString());
 		// Mise à jour de la position
 		position.reset();
 		setChanged();
 		notifyObservers(buffer);
 	}
-	
+
 	public void replace(Selection position) {
 		assert position.getStart() <= buffer.length();
 		assert position.getEnd() <= buffer.length();
-		logger.fine("replace = " + position.toString());
+		logger.fine(position.toString());
 		delete(position);
 		insert(position);
 	}
-	
-	public void cut( Selection position ) {
+
+	public void cut(Selection position) {
 		assert position.getStart() <= buffer.length();
 		assert position.getEnd() <= buffer.length();
-		logger.fine("cut = " + position.toString());
+		logger.fine(position.toString());
 		clipboard = position.getContent();
 		delete(position);
 	}
-	
-	public void copy( Selection position ) {
+
+	public void copy(Selection position) {
 		assert position.getStart() <= buffer.length();
 		assert position.getEnd() <= buffer.length();
-		logger.fine("copy = " + position.toString());
+		logger.fine(position.toString());
 		clipboard = position.getContent();
 	}
-	
-	public void paste( Selection position ) {
-		logger.fine("paste = " + position.toString());
+
+	public void paste(Selection position) {
+		logger.fine(position.toString());
 		if (clipboard == null) {
 			logger.severe("Clipboard is not set !");
 		}
 		position.setContent(clipboard);
 		insert(position);
 	}
-	
-	public String toString(){
+
+	public String toString() {
 		return buffer.toString();
 	}
 }

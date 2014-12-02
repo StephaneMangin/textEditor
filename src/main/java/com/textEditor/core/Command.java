@@ -1,13 +1,15 @@
+package com.textEditor.core;
+
+
 /**
  * @(#) Command.java
  */
 
-public class Command implements CommandInterface
-{
+public class Command implements CommandInterface {
 
 	protected Core core;
-	
-	public Command(Core core){
+
+	public Command(Core core) {
 		this.core = core;
 	}
 
@@ -15,5 +17,5 @@ public class Command implements CommandInterface
 		// TODO Auto-generated method stub
 		return;
 	}
-	
+
 }
