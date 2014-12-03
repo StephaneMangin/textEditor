@@ -1,12 +1,13 @@
 package com.textEditor.core;
 
-import java.util.Observable;
+import com.textEditor.memento.CareTaker;
+import com.textEditor.memento.Originator;
 
 /**
  * @(#) Selection.java
  */
 
-public class Selection extends Observable {
+public class Selection extends Originator {
 
 	private Integer start;
 	private Integer end;
@@ -24,8 +25,6 @@ public class Selection extends Observable {
 
 	public void setContent(String content) {
 		this.str = content;
-		setChanged();
-		notifyObservers();
 	}
 
 	public Integer getStart() {
@@ -34,8 +33,6 @@ public class Selection extends Observable {
 
 	public void setStart(Integer start) {
 		this.start = start;
-		setChanged();
-		notifyObservers();
 	}
 
 	public Integer getEnd() {
@@ -44,24 +41,18 @@ public class Selection extends Observable {
 
 	public void setEnd(Integer end) {
 		this.end = end;
-		setChanged();
-		notifyObservers();
 	}
 
 	public void jump() {
-		start = start + str.length();
+		setStart(start + str.length());
 		reset();
-		setChanged();
-		notifyObservers();
 	}
 
 	public void reset() {
-		end = 0;
-		str = "";
-		setChanged();
-		notifyObservers();
+		setEnd(0);
+		setContent("");
 	}
-
+	
 	public String toString() {
 		return start + "->" + end + "='" + str + "'";
 

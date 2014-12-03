@@ -1,6 +1,5 @@
 package com.textEditor.commands;
 
-import com.textEditor.core.Command;
 import com.textEditor.core.Core;
 import com.textEditor.core.Selection;
 

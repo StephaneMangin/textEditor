@@ -49,11 +49,10 @@ public class Core extends Observable implements CoreInterface {
 	private StringBuffer buffer = new StringBuffer();
 	private String clipboard = new String();
 	private Log logger;
-	private InternalGui gui;
-
+	
 	public Core() {
 		logger = new Log(this);
-		gui = new InternalGui(this);
+		new InternalGui(this);
 	}
 
 	public void insert(Selection position) {

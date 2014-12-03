@@ -1,4 +1,6 @@
-package com.textEditor.core;
+package com.textEditor.commands;
+
+import com.textEditor.core.Selection;
 
 /**
  * @(#) CommandInterface.java

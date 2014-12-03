@@ -1,4 +1,7 @@
-package com.textEditor.core;
+package com.textEditor.commands;
+
+import com.textEditor.core.Core;
+import com.textEditor.core.Selection;
 
 
 /**
@@ -14,8 +17,6 @@ public class Command implements CommandInterface {
 	}
 
 	public void execute(Selection position) {
-		// TODO Auto-generated method stub
 		return;
 	}
-
 }

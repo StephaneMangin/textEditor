@@ -37,8 +37,7 @@ public class User {
 		insert = new Insert(core);
 		delete = new Delete(core);
 		replace = new Replace(core);
-		gui = new Gui("Basic Text Editor", copy, paste, cut, insert, delete,
-				replace);
+		gui = new Gui("Basic Text Editor", copy, paste, cut, insert, delete, replace);
 		core.addObserver((Observer) gui);
 	}
 

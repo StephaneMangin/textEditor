@@ -5,6 +5,7 @@ import javax.swing.*;
 import com.textEditor.commands.*;
 import com.textEditor.core.*;
 import com.textEditor.log.*;
+import com.textEditor.memento.CareTaker;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -12,8 +13,7 @@ import java.io.*;
 import java.util.Observable;
 import java.util.Observer;
 
-public class Gui extends JFrame implements Observer, ActionListener,
-		KeyListener {
+public class Gui extends JFrame implements Observer, ActionListener, KeyListener {
 
 	private static final long serialVersionUID = 1L;
 	private Cut cut;
@@ -57,8 +57,7 @@ public class Gui extends JFrame implements Observer, ActionListener,
 		}
 
 		public void append(String str) {
-			Selection position = new Selection(getCaretPosition(),
-					getCaretPosition(), str);
+			Selection position = new Selection(getCaretPosition(), getCaretPosition(), str);
 			Gui.this.insert.execute(position);
 		}
 
@@ -68,8 +67,7 @@ public class Gui extends JFrame implements Observer, ActionListener,
 		}
 
 		public void replaceSelection(String str) {
-			Selection position = new Selection(getSelectionStart(),
-					getSelectionEnd(), str);
+			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), str);
 			// In all cases, JTextArea call this method whatever the currently
 			// operation
 			// We have to look at positions to know about the current operation.
@@ -82,22 +80,27 @@ public class Gui extends JFrame implements Observer, ActionListener,
 		}
 
 		public void cut() {
-			Selection position = new Selection(getSelectionStart(),
-					getSelectionEnd(), getSelectedText());
+			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText());
 			Gui.this.cut.execute(position);
 		}
 
 		public void paste() {
-			Selection position = new Selection(getSelectionStart(),
-					getSelectionEnd(), getSelectedText());
+			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText());
 			Gui.this.paste.execute(position);
 		}
 
 		public void copy() {
-			Selection position = new Selection(getSelectionStart(),
-					getSelectionEnd(), getSelectedText());
+			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText());
 			Gui.this.copy.execute(position);
 		}
+		
+		/*public void setText(String str) {
+			Selection position = new Selection(0, this.getText().length(), str);
+			Gui.this.replace.execute(position);
+			if (bttnrec.isEnabled()) {
+				careTaker.addMemento(position);
+			}
+		}*/
 	}
 
 	public Gui(String name, Copy copy, Paste paste, Cut cut, Insert insert,
@@ -317,17 +320,9 @@ public class Gui extends JFrame implements Observer, ActionListener,
 			jta.paste();
 		} else if (e.getSource().equals(bttnrec) || e.getSource().equals(mrec)) {
 			record();
-			bttnrec.setEnabled(false);
-			mrec.setEnabled(false);
-			bttnstop.setEnabled(true);
-			mrecstop.setEnabled(true);
 		} else if (e.getSource().equals(bttnstop)
 				|| e.getSource().equals(mrecstop)) {
 			stop();
-			bttnrec.setEnabled(true);
-			mrec.setEnabled(true);
-			bttnstop.setEnabled(false);
-			mrecstop.setEnabled(false);
 		} else if (e.getSource().equals(bttnplay)
 				|| e.getSource().equals(mplay)) {
 			play();
@@ -347,16 +342,23 @@ public class Gui extends JFrame implements Observer, ActionListener,
 	}
 
 	public void record() {
+		bttnrec.setEnabled(false);
+		mrec.setEnabled(false);
+		bttnstop.setEnabled(true);
+		mrecstop.setEnabled(true);
 		logger.info("Macro recording...");
 	}
 
 	public void stop() {
-		logger.info("Macro stop.");
+		bttnrec.setEnabled(true);
+		mrec.setEnabled(true);
+		bttnstop.setEnabled(false);
+		mrecstop.setEnabled(false);
+		logger.info("Macro stopped.");
 	}
 
 	public void play() {
 		logger.info("Macro playing...");
-
 	}
 
 	public void exit() {
