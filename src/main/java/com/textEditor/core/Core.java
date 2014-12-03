@@ -10,7 +10,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import net.sf.json.JSONObject;
+
+import com.textEditor.commands.*;
 import com.textEditor.log.Log;
+import com.textEditor.memento.CareTaker;
+import com.textEditor.memento.Memento;
 
 /**
  * @(#) Core.java
@@ -18,6 +23,12 @@ import com.textEditor.log.Log;
 
 public class Core extends Observable implements CoreInterface {
 
+	private CareTaker careTaker = new CareTaker();
+	private StringBuffer buffer = new StringBuffer();
+	private String clipboard = new String();
+	private Log logger;
+	private boolean recording = false;
+	
 	public class InternalGui extends JFrame implements Observer {
 
 		private static final long serialVersionUID = 1L;
@@ -27,11 +38,9 @@ public class Core extends Observable implements CoreInterface {
 
 		public InternalGui(Core core) {
 			setLayout(new BorderLayout());
-
 			jta = new JTextArea();
 			jtf = new JTextField();
 			jta.setFont(new Font("Arial", Font.PLAIN, 16));
-
 			jscroll = new JScrollPane(jta);
 			add(jtf, BorderLayout.NORTH);
 			add(jscroll, BorderLayout.CENTER);
@@ -45,68 +54,149 @@ public class Core extends Observable implements CoreInterface {
 			jta.setText(obj.toString());
 		}
 	}
-
-	private StringBuffer buffer = new StringBuffer();
-	private String clipboard = new String();
-	private Log logger;
 	
 	public Core() {
 		logger = new Log(this);
 		new InternalGui(this);
 	}
 
+	public boolean isRecording() {
+		return recording;
+	}
+
+	public void play() {
+		for (int i=0;i<careTaker.size();i++) {
+			Memento memento = careTaker.getMemento(i);
+			String className = memento.getSavedState().getString("command");
+			Command command = null;
+			switch (className) {
+            case "Insert":
+            	command = new Insert(this);
+                break;
+            case "Delete":
+            	command = new Delete(this);
+                break;
+            case "Replace":
+            	command = new Replace(this);
+                break;
+            case "Cut":
+            	command = new Cut(this);
+                break;
+            case "Copy":
+            	command = new Copy(this);
+                break;
+            case "Paste":
+            	command = new Paste(this);
+                break;
+			}
+			command.restoreFromMemento(memento);
+			command.execute(command.getSelection());
+		}
+		stop();
+	}
+
+	public void record() {
+		this.recording = true;
+		careTaker = new CareTaker();
+	}
+
+	public void stop() {
+		this.recording = false;
+	}
+	
 	public void insert(Selection position) {
-		buffer.insert(position.getStart(), position.getContent());
-		logger.fine(position.toString());
-		// Mise à jour de la position
-		position.jump();
-		setChanged();
-		notifyObservers(buffer);
+		if (buffer.length() >= position.getEnd()) {
+			if (isRecording()) {
+				Insert command = new Insert(this);
+				command.setPosition(position);
+				careTaker.addMemento(command.saveToMemento());
+			}
+			buffer.insert(position.getStart(), position.getContent());
+			logger.fine(position.toString());
+			// Mise à jour de la position
+			position.jump();
+			setChanged();
+			notifyObservers(buffer);
+		}
 	}
 
 	public void delete(Selection position) {
 		assert position.getStart() <= buffer.length();
-		assert position.getStart() + position.getEnd() <= buffer.length();
+		assert position.getEnd() <= buffer.length();
 		// buffer end argument is the last index of the string, not the length.
-		buffer.delete(position.getStart(),
-				position.getStart() + position.getEnd());
-		logger.fine(position.toString());
-		// Mise à jour de la position
-		position.reset();
-		setChanged();
-		notifyObservers(buffer);
+		if (buffer.length() >= position.getEnd()) {
+			if (isRecording()) {
+				Delete command = new Delete(this);
+				command.setPosition(position);
+				careTaker.addMemento(command.saveToMemento());
+			}
+			buffer.delete(position.getStart(), position.getStart() + position.getEnd());
+			logger.fine(position.toString());
+			// Mise à jour de la position
+			position.reset();
+			setChanged();
+			notifyObservers(buffer);
+		}
 	}
 
 	public void replace(Selection position) {
-		assert position.getStart() <= buffer.length();
-		assert position.getEnd() <= buffer.length();
-		logger.fine(position.toString());
-		delete(position);
-		insert(position);
+		if (buffer.length() >= position.getEnd()) {
+			if (isRecording()) {
+				Replace command = new Replace(this);
+				command.setPosition(position);
+				careTaker.addMemento(command.saveToMemento());
+			}
+			assert position.getStart() <= buffer.length();
+			assert position.getEnd() <= buffer.length();
+			logger.fine(position.toString());
+			delete(position);
+			insert(position);
+		}
 	}
 
 	public void cut(Selection position) {
-		assert position.getStart() <= buffer.length();
-		assert position.getEnd() <= buffer.length();
-		logger.fine(position.toString());
-		clipboard = position.getContent();
-		delete(position);
+		if (buffer.length() >= position.getEnd()) {
+			if (isRecording()) {
+				Cut command = new Cut(this);
+				command.setPosition(position);
+				careTaker.addMemento(command.saveToMemento());
+			}
+			assert position.getStart() <= buffer.length();
+			assert position.getEnd() <= buffer.length();
+			logger.fine(position.toString());
+			clipboard = position.getContent();
+			delete(position);
+		}
 	}
 
 	public void copy(Selection position) {
-		assert position.getStart() <= buffer.length();
-		assert position.getEnd() <= buffer.length();
-		logger.fine(position.toString());
-		clipboard = position.getContent();
-	}
-
-	public void paste(Selection position) {
-		logger.fine(position.toString());
-		if (clipboard == null) {
-			logger.severe("Clipboard is not set !");
+		if (buffer.length() >= position.getEnd()) {
+			if (isRecording()) {
+				Copy command = new Copy(this);
+				command.setPosition(position);
+				careTaker.addMemento(command.saveToMemento());
+			}
+			assert position.getStart() <= buffer.length();
+			assert position.getEnd() <= buffer.length();
+			logger.fine(position.toString());
+			clipboard = position.getContent();
 		}
-		position.setContent(clipboard);
-		insert(position);
+	}
+	
+	public void paste(Selection position) {
+		if (buffer.length() >= position.getEnd()) {
+			if (isRecording()) {
+				Paste command = new Paste(this);
+				command.setPosition(position);
+				careTaker.addMemento(command.saveToMemento());
+			}
+			logger.fine(position.toString());
+			if (clipboard == null) {
+				logger.severe("Clipboard is not set !");
+			}
+			position.setContent(clipboard);
+			insert(position);
+		}
 	}
 
 	public String toString() {

@@ -15,5 +15,5 @@ public class Insert extends Command {
 
 	public void execute(Selection position) {
 		core.insert(position);
-	}	
+	}
 }

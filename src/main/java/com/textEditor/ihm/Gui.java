@@ -5,7 +5,6 @@ import javax.swing.*;
 import com.textEditor.commands.*;
 import com.textEditor.core.*;
 import com.textEditor.log.*;
-import com.textEditor.memento.CareTaker;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -13,7 +12,7 @@ import java.io.*;
 import java.util.Observable;
 import java.util.Observer;
 
-public class Gui extends JFrame implements Observer, ActionListener, KeyListener {
+public class Gui extends JFrame implements GuiInterface, Observer, ActionListener, KeyListener {
 
 	private static final long serialVersionUID = 1L;
 	private Cut cut;
@@ -22,6 +21,9 @@ public class Gui extends JFrame implements Observer, ActionListener, KeyListener
 	private Insert insert;
 	private Delete delete;
 	private Replace replace;
+	private Record record;
+	private Play play;
+	private Stop stop;
 
 	private JTextArea jta;
 	private JScrollPane jscroll;
@@ -93,26 +95,10 @@ public class Gui extends JFrame implements Observer, ActionListener, KeyListener
 			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText());
 			Gui.this.copy.execute(position);
 		}
-		
-		/*public void setText(String str) {
-			Selection position = new Selection(0, this.getText().length(), str);
-			Gui.this.replace.execute(position);
-			if (bttnrec.isEnabled()) {
-				careTaker.addMemento(position);
-			}
-		}*/
 	}
 
-	public Gui(String name, Copy copy, Paste paste, Cut cut, Insert insert,
-			Delete delete, Replace replace) {
+	public Gui(String name) {
 		logger = new Log(this);
-		this.copy = copy;
-		this.paste = paste;
-		this.cut = cut;
-		this.insert = insert;
-		this.delete = delete;
-		this.replace = replace;
-
 		fname = "";
 		chg = false;
 		setLayout(new BorderLayout());
@@ -137,16 +123,49 @@ public class Gui extends JFrame implements Observer, ActionListener, KeyListener
 		logger.info("Done.");
 	}
 
+	public void setCommands(
+			Copy copy,
+			Paste paste,
+			Cut cut,
+			Insert insert,
+			Delete delete,
+			Replace replace,
+			Record record,
+			Play play,
+			Stop stop) {
+		this.copy = copy;
+		this.paste = paste;
+		this.cut = cut;
+		this.insert = insert;
+		this.delete = delete;
+		this.replace = replace;
+		this.record = record;
+		this.play = play;
+		this.stop = stop;
+	}
+	
+	/** Returns an ImageIcon, or null if the path was invalid. */
+	private ImageIcon createImageIcon(String path, String description) {
+		java.net.URL imgURL = getClass().getResource(path);
+		if (imgURL != null) {
+			return new ImageIcon(imgURL, description);
+		} else {
+			System.err.println("Couldn't find file: " + path);
+			return null;
+		}
+	}
+	
 	private void initIcons() {
-		iNew = new ImageIcon("images/new.gif");
-		iOpen = new ImageIcon("images/open.gif");
-		iSave = new ImageIcon("images/save.gif");
-		iCut = new ImageIcon("images/cut.gif");
-		iCopy = new ImageIcon("images/copy.gif");
-		iPaste = new ImageIcon("images/paste.gif");
-		iRecord = new ImageIcon("images/record.gif");
-		iStop = new ImageIcon("images/stop.gif");
-		iPlay = new ImageIcon("images/play.gif");
+
+		iNew = createImageIcon("/images/new.gif", "New file");
+		iOpen = createImageIcon("/images/open.gif", "Open a file");
+		iSave = createImageIcon("/images/save.gif", "Save");
+		iCut = createImageIcon("/images/cut.gif", "Cut");
+		iCopy = createImageIcon("/images/copy.gif", "Copy");
+		iPaste = createImageIcon("/images/paste.gif", "Paste");
+		iRecord = createImageIcon("/images/record.gif", "Record");
+		iStop = createImageIcon("/images/stop.gif", "Stop");
+		iPlay = createImageIcon("/images/play.gif", "Play");
 		logger.info("Done.");
 	}
 
@@ -176,12 +195,12 @@ public class Gui extends JFrame implements Observer, ActionListener, KeyListener
 		epaste.setMnemonic('P');
 		eselall = new JMenuItem("Selectall");
 		eselall.setMnemonic('A');
-		mrec = new JMenuItem("Record");
+		mrec = new JMenuItem("Record", iRecord);
 		mrec.setMnemonic('R');
-		mrecstop = new JMenuItem("Stop");
+		mrecstop = new JMenuItem("Stop", iStop);
 		mrecstop.setEnabled(false);
 		mrecstop.setMnemonic('R');
-		mplay = new JMenuItem("Play");
+		mplay = new JMenuItem("Play", iPlay);
 		mplay.setMnemonic('P');
 
 		file.add(fnew);
@@ -312,29 +331,26 @@ public class Gui extends JFrame implements Observer, ActionListener, KeyListener
 
 		if (e.getSource().equals(bttncut) || e.getSource().equals(ecut)) {
 			jta.cut();
-		} else if (e.getSource().equals(bttncopy)
-				|| e.getSource().equals(ecopy)) {
+		} else if (e.getSource().equals(bttncopy) || e.getSource().equals(ecopy)) {
 			jta.copy();
-		} else if (e.getSource().equals(bttnpaste)
-				|| e.getSource().equals(epaste)) {
+		} else if (e.getSource().equals(bttnpaste) || e.getSource().equals(epaste)) {
 			jta.paste();
 		} else if (e.getSource().equals(bttnrec) || e.getSource().equals(mrec)) {
 			record();
-		} else if (e.getSource().equals(bttnstop)
-				|| e.getSource().equals(mrecstop)) {
+		} else if (e.getSource().equals(bttnstop) || e.getSource().equals(mrecstop)) {
 			stop();
-		} else if (e.getSource().equals(bttnplay)
-				|| e.getSource().equals(mplay)) {
+		} else if (e.getSource().equals(bttnplay) || e.getSource().equals(mplay)) {
 			play();
 		} else if (e.getSource().equals(eselall)) {
 			jta.selectAll();
-		} else if (e.getSource().equals(fnew)) {
+		} else if (e.getSource().equals(bttnnew) || e.getSource().equals(fnew)) {
 			fname = "";
 			chg = false;
-			jta.setText("");
-		} else if (e.getSource().equals(fopen)) {
+			Selection position = new Selection(0, jta.getText().length(), "");
+			Gui.this.delete.execute(position);
+		} else if (e.getSource().equals(bttnopen) || e.getSource().equals(fopen)) {
 			open();
-		} else if (e.getSource().equals(fsave)) {
+		} else if (e.getSource().equals(bttnsave) || e.getSource().equals(fsave)) {
 			save();
 		} else if (e.getSource().equals(fexit)) {
 			exit();
@@ -346,6 +362,7 @@ public class Gui extends JFrame implements Observer, ActionListener, KeyListener
 		mrec.setEnabled(false);
 		bttnstop.setEnabled(true);
 		mrecstop.setEnabled(true);
+		this.record.execute();
 		logger.info("Macro recording...");
 	}
 
@@ -354,10 +371,12 @@ public class Gui extends JFrame implements Observer, ActionListener, KeyListener
 		mrec.setEnabled(true);
 		bttnstop.setEnabled(false);
 		mrecstop.setEnabled(false);
+		this.stop.execute();
 		logger.info("Macro stopped.");
 	}
 
 	public void play() {
+		this.play.execute();
 		logger.info("Macro playing...");
 	}
 

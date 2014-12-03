@@ -1,29 +1,16 @@
 package com.textEditor.memento;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.Stack;
 
-public class CareTaker {
-	
-	private Map<Object, List<Object>> savedStates;
-	
-	public void addMemento(Object m) {
-		String className = m.getClass().getName();
-		if (!savedStates.containsKey(className)) {
-			savedStates.put(className, new ArrayList<Object>());
-		}
-		List<Object> list = savedStates.get(className);
-		list.add(m);
+public class CareTaker extends Stack<Memento> {
+			
+	private static final long serialVersionUID = -5441904950627315914L;
+
+	public void addMemento(Memento m) {
+		push(m);
 	}
 	
-	public Object getMemento(Object m, int index) {
-		String className = m.getClass().getName();
-		return savedStates.get(className).get(index);
-	}
-	
-	public int length(Object m) {
-		String className = m.getClass().getName();
-		return savedStates.get(className).size();
+	public Memento getMemento(int index) {
+		return elementAt(index);
 	}
 }

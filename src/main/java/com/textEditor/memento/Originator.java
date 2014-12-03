@@ -4,14 +4,14 @@ import net.sf.json.JSONObject;
 
 public class Originator {
 	
-    private JSONObject state;
+    protected JSONObject state = new JSONObject();
  
     public void set(JSONObject state) {
         System.out.println("Originator: etat affecte a: " + state.toString());
         this.state = state;
     }
  
-    public Object saveToMemento() {
+    public Memento saveToMemento() {
         System.out.println("Originator: sauvegarde dans le memento.");
         return new Memento(state);
     }
@@ -21,19 +21,6 @@ public class Originator {
             Memento memento = (Memento)m;
             set(memento.getSavedState());
             System.out.println("Originator: Etat après restauration: " + state.toString());
-        }
-    }
- 
-    private static class Memento {
-    	
-        private JSONObject state;
- 
-        public Memento(JSONObject stateToSave) {
-        	state = stateToSave;
-        }
-        
-        public JSONObject getSavedState() {
-        	return state;
         }
     }
  }
