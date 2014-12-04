@@ -10,8 +10,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import net.sf.json.JSONObject;
-
 import com.textEditor.commands.*;
 import com.textEditor.log.Log;
 import com.textEditor.memento.CareTaker;
@@ -24,6 +22,7 @@ import com.textEditor.memento.Memento;
 public class Core extends Observable implements CoreInterface {
 
 	private CareTaker careTaker = new CareTaker();
+	private CareTaker careTakerUndoRedo = new CareTaker();
 	private StringBuffer buffer = new StringBuffer();
 	private String clipboard = new String();
 	private Log logger;
@@ -68,6 +67,8 @@ public class Core extends Observable implements CoreInterface {
 		for (int i=0;i<careTaker.size();i++) {
 			Memento memento = careTaker.getMemento(i);
 			String className = memento.getSavedState().getString("command");
+			System.out.println(className);
+			System.out.println(memento.getSavedState().toString());
 			Command command = null;
 			switch (className) {
             case "Insert":
@@ -105,12 +106,15 @@ public class Core extends Observable implements CoreInterface {
 	}
 	
 	public void insert(Selection position) {
+		assert position.getStart() <= buffer.length();
+		assert position.getEnd() <= buffer.length();
+		Insert command = new Insert(this);
+		command.setPosition(position);
+		careTakerUndoRedo.addMemento(command.saveToMemento());
+		if (isRecording()) {
+			careTaker.addMemento(command.saveToMemento());
+		}
 		if (buffer.length() >= position.getEnd()) {
-			if (isRecording()) {
-				Insert command = new Insert(this);
-				command.setPosition(position);
-				careTaker.addMemento(command.saveToMemento());
-			}
 			buffer.insert(position.getStart(), position.getContent());
 			logger.fine(position.toString());
 			// Mise à jour de la position
@@ -123,13 +127,14 @@ public class Core extends Observable implements CoreInterface {
 	public void delete(Selection position) {
 		assert position.getStart() <= buffer.length();
 		assert position.getEnd() <= buffer.length();
+		Delete command = new Delete(this);
+		command.setPosition(position);
+		careTakerUndoRedo.addMemento(command.saveToMemento());
+		if (isRecording()) {
+			careTaker.addMemento(command.saveToMemento());
+		}
 		// buffer end argument is the last index of the string, not the length.
 		if (buffer.length() >= position.getEnd()) {
-			if (isRecording()) {
-				Delete command = new Delete(this);
-				command.setPosition(position);
-				careTaker.addMemento(command.saveToMemento());
-			}
 			buffer.delete(position.getStart(), position.getStart() + position.getEnd());
 			logger.fine(position.toString());
 			// Mise à jour de la position
@@ -140,14 +145,15 @@ public class Core extends Observable implements CoreInterface {
 	}
 
 	public void replace(Selection position) {
+		assert position.getStart() <= buffer.length();
+		assert position.getEnd() <= buffer.length();
+		Replace command = new Replace(this);
+		command.setPosition(position);
+		careTakerUndoRedo.addMemento(command.saveToMemento());
+		if (isRecording()) {
+			careTaker.addMemento(command.saveToMemento());
+		}
 		if (buffer.length() >= position.getEnd()) {
-			if (isRecording()) {
-				Replace command = new Replace(this);
-				command.setPosition(position);
-				careTaker.addMemento(command.saveToMemento());
-			}
-			assert position.getStart() <= buffer.length();
-			assert position.getEnd() <= buffer.length();
 			logger.fine(position.toString());
 			delete(position);
 			insert(position);
@@ -155,12 +161,13 @@ public class Core extends Observable implements CoreInterface {
 	}
 
 	public void cut(Selection position) {
+		Cut command = new Cut(this);
+		command.setPosition(position);
+		careTakerUndoRedo.addMemento(command.saveToMemento());
+		if (isRecording()) {
+			careTaker.addMemento(command.saveToMemento());
+		}
 		if (buffer.length() >= position.getEnd()) {
-			if (isRecording()) {
-				Cut command = new Cut(this);
-				command.setPosition(position);
-				careTaker.addMemento(command.saveToMemento());
-			}
 			assert position.getStart() <= buffer.length();
 			assert position.getEnd() <= buffer.length();
 			logger.fine(position.toString());
@@ -170,12 +177,13 @@ public class Core extends Observable implements CoreInterface {
 	}
 
 	public void copy(Selection position) {
+		Copy command = new Copy(this);
+		command.setPosition(position);
+		careTakerUndoRedo.addMemento(command.saveToMemento());
+		if (isRecording()) {
+			careTaker.addMemento(command.saveToMemento());
+		}
 		if (buffer.length() >= position.getEnd()) {
-			if (isRecording()) {
-				Copy command = new Copy(this);
-				command.setPosition(position);
-				careTaker.addMemento(command.saveToMemento());
-			}
 			assert position.getStart() <= buffer.length();
 			assert position.getEnd() <= buffer.length();
 			logger.fine(position.toString());
@@ -184,12 +192,13 @@ public class Core extends Observable implements CoreInterface {
 	}
 	
 	public void paste(Selection position) {
+		Paste command = new Paste(this);
+		command.setPosition(position);
+		careTakerUndoRedo.addMemento(command.saveToMemento());
+		if (isRecording()) {
+			careTaker.addMemento(command.saveToMemento());
+		}
 		if (buffer.length() >= position.getEnd()) {
-			if (isRecording()) {
-				Paste command = new Paste(this);
-				command.setPosition(position);
-				careTaker.addMemento(command.saveToMemento());
-			}
 			logger.fine(position.toString());
 			if (clipboard == null) {
 				logger.severe("Clipboard is not set !");

@@ -12,7 +12,7 @@ public class Originator {
     }
  
     public Memento saveToMemento() {
-        System.out.println("Originator: sauvegarde dans le memento.");
+        System.out.println("Originator: sauvegarde dans le memento =>" + state.toString());
         return new Memento(state);
     }
     
@@ -20,7 +20,7 @@ public class Originator {
         if (m instanceof Memento) {
             Memento memento = (Memento)m;
             set(memento.getSavedState());
-            System.out.println("Originator: Etat après restauration: " + state.toString());
+            System.out.println("Originator: Etat après restauration: " + memento.getSavedState().toString());
         }
     }
  }

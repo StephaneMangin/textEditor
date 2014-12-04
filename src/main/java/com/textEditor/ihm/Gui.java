@@ -298,7 +298,6 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 		chg = true;
 	}
 
-	@Override
 	public void keyReleased(KeyEvent e) {
 		// ATTENTION : The position indices are thus after action is called
 		int keyCode = e.getKeyCode();
@@ -308,10 +307,12 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 		// In all case, ending index must not be equal or higher than text
 		// length (Index overflow risk)
 		// It means starting index must be at least equal to text length minus 1
-		if (end >= textLength) {
+		if (start >= 0) {
 			if (keyCode == KeyEvent.VK_BACK_SPACE) {
 				((TextArea) jta).delete(start, end);
 			}
+		}
+		if (end <= textLength) {
 			if (keyCode == KeyEvent.VK_DELETE) {
 				((TextArea) jta).delete(start, end);
 				// Bug while using delete. Caret return at the end of the text
