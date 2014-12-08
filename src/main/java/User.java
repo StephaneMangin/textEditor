@@ -1,8 +1,10 @@
-package com.textEditor.ihm;
+
 
 import java.util.Observer;
+
 import com.textEditor.commands.*;
 import com.textEditor.core.*;
+import com.textEditor.ihm.Gui;
 
 /**
  * @(#) User.java

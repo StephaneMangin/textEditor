@@ -2,7 +2,6 @@ package com.textEditor.core;
 
 import java.awt.BorderLayout;
 import java.awt.Font;
-import java.lang.reflect.Method;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -22,11 +21,11 @@ import com.textEditor.memento.Pair;
 
 public class Core extends Observable implements CoreInterface {
 
-	private CareTaker careTaker = new CareTaker();
 	private StringBuffer buffer = new StringBuffer();
 	private String clipboard = new String();
 	private Log logger;
 	private boolean recording = false;
+	private CareTaker recordCareTaker = new CareTaker();
 	
 	public class InternalGui extends JFrame implements Observer {
 
@@ -50,6 +49,7 @@ public class Core extends Observable implements CoreInterface {
 		}
 
 		public void update(Observable core, Object obj) {
+			jtf.setText(clipboard);
 			jta.setText(obj.toString());
 		}
 	}
@@ -59,14 +59,10 @@ public class Core extends Observable implements CoreInterface {
 		new InternalGui(this);
 	}
 
-	public boolean isRecording() {
-		return recording;
-	}
-
 	public void play() {
 		Selection position = new Selection(0, 0, "");
-		for (int i=0;i<careTaker.size();i++) {
-			Pair<String, Memento> pair = careTaker.getMemento(i);
+		for (int i=0;i<recordCareTaker.size();i++) {
+			Pair<String, Memento> pair = recordCareTaker.getMemento(i);
 			String methodName = (String) pair.getL();
 			Memento memento = (Memento) pair.getR();
 			position.restoreFromMemento(memento);
@@ -91,12 +87,11 @@ public class Core extends Observable implements CoreInterface {
                 break;
 			}
 		}
-		stop();
 	}
 
 	public void record() {
 		this.recording = true;
-		careTaker = new CareTaker();
+		recordCareTaker = new CareTaker();
 	}
 
 	public void stop() {
@@ -104,10 +99,8 @@ public class Core extends Observable implements CoreInterface {
 	}
 	
 	public void insert(Selection position) {
-		assert position.getStart() <= buffer.length();
-		assert position.getEnd() <= buffer.length();
-		if (isRecording()) {
-			careTaker.addMemento("insert", position.saveToMemento());
+		if (recording) {
+			recordCareTaker.addMemento("insert", position.saveToMemento());
 		}
 		if (buffer.length() >= position.getEnd()) {
 			buffer.insert(position.getStart(), position.getContent());
@@ -120,8 +113,8 @@ public class Core extends Observable implements CoreInterface {
 	}
 
 	public void delete(Selection position) {
-		if (isRecording()) {
-			careTaker.addMemento("delete", position.saveToMemento());
+		if (recording) {
+			recordCareTaker.addMemento("delete", position.saveToMemento());
 		}
 		// buffer end argument is the last index of the string, not the length.
 		if (buffer.length() >= position.getEnd()) {
@@ -135,8 +128,8 @@ public class Core extends Observable implements CoreInterface {
 	}
 
 	public void replace(Selection position) {
-		if (isRecording()) {
-			careTaker.addMemento("replace", position.saveToMemento());
+		if (recording) {
+			recordCareTaker.addMemento("replace", position.saveToMemento());
 		}
 		if (buffer.length() >= position.getEnd()) {
 			logger.fine(position.toString());
@@ -146,8 +139,8 @@ public class Core extends Observable implements CoreInterface {
 	}
 
 	public void cut(Selection position) {
-		if (isRecording()) {
-			careTaker.addMemento("cut", position.saveToMemento());
+		if (recording) {
+			recordCareTaker.addMemento("cut", position.saveToMemento());
 		}
 		if (buffer.length() >= position.getEnd()) {
 			assert position.getStart() <= buffer.length();
@@ -159,8 +152,8 @@ public class Core extends Observable implements CoreInterface {
 	}
 
 	public void copy(Selection position) {
-		if (isRecording()) {
-			careTaker.addMemento("copy", position.saveToMemento());
+		if (recording) {
+			recordCareTaker.addMemento("copy", position.saveToMemento());
 		}
 		if (buffer.length() >= position.getEnd()) {
 			assert position.getStart() <= buffer.length();
@@ -171,8 +164,8 @@ public class Core extends Observable implements CoreInterface {
 	}
 	
 	public void paste(Selection position) {
-		if (isRecording()) {
-			careTaker.addMemento("paste", position.saveToMemento());
+		if (recording) {
+			recordCareTaker.addMemento("paste", position.saveToMemento());
 		}
 		if (buffer.length() >= position.getEnd()) {
 			logger.fine(position.toString());

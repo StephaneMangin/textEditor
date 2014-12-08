@@ -1,6 +1,8 @@
 package com.textEditor.ihm;
 
+import javax.accessibility.AccessibleContext;
 import javax.swing.*;
+import javax.swing.undo.UndoManager;
 
 import com.textEditor.commands.*;
 import com.textEditor.core.*;
@@ -26,6 +28,7 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 	private Stop stop;
 
 	private JTextArea jta;
+	protected UndoManager undoManager = new UndoManager();
 	private JScrollPane jscroll;
 
 	private JToolBar jtbar;
@@ -43,54 +46,70 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 	private String fname;
 	private boolean chg;
 	private Log logger;
+	private int selectionStart;
+	private int selectionEnd;
 
+	@SuppressWarnings("serial")
 	private class TextArea extends JTextArea {
 
-		private static final long serialVersionUID = 1L;
-
+		@Override
 		public void insert(String str, int pos) {
 			Selection position = new Selection(pos, pos, str);
 			Gui.this.insert.execute(position);
 		}
 
+		@Override
+		public void append(String str) {
+			int pos = getText().length() - 1;
+			Selection position = new Selection(pos, pos, str);
+			Gui.this.insert.execute(position);
+		}
+
+		@Override
+		public void replaceRange(String str, int pos, int end) {
+			if (str == "") {
+				delete(pos, end);
+			} else {
+				Selection position = new Selection(pos, end, str);
+				Gui.this.replace.execute(position);
+			}
+		}
+		
 		public void delete(int start, int end) {
 			Selection position = new Selection(start, end, "");
 			Gui.this.delete.execute(position);
 		}
 
-		public void append(String str) {
-			Selection position = new Selection(getCaretPosition(), getCaretPosition(), str);
-			Gui.this.insert.execute(position);
-		}
-
-		public void replaceRange(String str, int start, int end) {
-			Selection position = new Selection(start, end, str);
-			Gui.this.replace.execute(position);
-		}
-
+		@Override
 		public void replaceSelection(String str) {
-			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), str);
 			// In all cases, JTextArea call this method whatever the currently
 			// operation
 			// We have to look at positions to know about the current operation.
 			// It can be either a simple char append or a replacement.
-			if (position.getStart() == position.getEnd()) {
-				Gui.this.insert.execute(position);
+			if (getSelectionStart() == getSelectionEnd()) {
+				insert(str, getSelectionStart());
+			} else if (str == "") {
+				delete(getSelectionStart(), getSelectionEnd());
 			} else {
+				Selection position = new Selection(getSelectionStart(), getSelectionEnd(), str);
 				Gui.this.replace.execute(position);
 			}
+			setCaretPosition(getSelectionStart() + str.length());
 		}
 
+		@Override
 		public void cut() {
 			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText());
 			Gui.this.cut.execute(position);
 		}
 
+		@Override
 		public void paste() {
 			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText());
 			Gui.this.paste.execute(position);
 		}
 
+		@Override
 		public void copy() {
 			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText());
 			Gui.this.copy.execute(position);
@@ -294,32 +313,32 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 		logger.info("Done.");
 	}
 
+	@Override
 	public void keyPressed(KeyEvent e) {
+		// First we keep the positions of the cursor and the selection if any
+		selectionStart = jta.getCaret().getDot();
+		selectionEnd = jta.getCaret().getMark();
 		chg = true;
 	}
 
+	@Override
 	public void keyReleased(KeyEvent e) {
+		// Then we can use the previous saved position for DELETE and BACKSPACE
 		// ATTENTION : The position indices are thus after action is called
 		int keyCode = e.getKeyCode();
-		int start = jta.getCaretPosition();
-		int end = start + 1;
-		if (jta.getSelectedText() != null) {
-			start = jta.getSelectionStart();
-			end = jta.getSelectionEnd();
-		}
 		if (keyCode == KeyEvent.VK_BACK_SPACE) {
-			((TextArea) jta).delete(start, end);
-		}
-		if (keyCode == KeyEvent.VK_DELETE) {
-			((TextArea) jta).delete(start, end);
+			((TextArea) jta).delete(selectionStart - 1, selectionEnd);
 			// Bug while using delete. Caret return at the end of the text
-			// ???
-			jta.setCaretPosition(start);
+			jta.setCaretPosition(selectionStart - 1);
+		} else if (keyCode == KeyEvent.VK_DELETE) {
+			((TextArea) jta).delete(selectionStart, selectionEnd + 1);
+			// Bug while using delete. Caret return at the end of the text
+			jta.setCaretPosition(selectionStart);
 		}
 		chg = true;
-
 	}
 
+	@Override
 	public void keyTyped(KeyEvent e) {
 		chg = true;
 	}
