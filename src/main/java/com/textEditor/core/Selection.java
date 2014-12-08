@@ -1,12 +1,14 @@
 package com.textEditor.core;
 
+import com.textEditor.memento.Originator;
+
 import net.sf.json.JSONObject;
 
 /**
  * @(#) Selection.java
  */
 
-public class Selection {
+public class Selection extends Originator {
 
 	private Integer start = 0;
 	private Integer end = 0;
@@ -16,9 +18,12 @@ public class Selection {
 		setStart(start);
 		setEnd(end);
 		setContent(content);
+		state = toJson();
 	}
     
 	public void set(JSONObject json) {
+		state = json;
+		System.out.println(json.toString());
 		setStart(json.getInt("start"));
 		setEnd(json.getInt("end"));
 		setContent(json.getString("content"));

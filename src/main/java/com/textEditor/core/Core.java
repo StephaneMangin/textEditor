@@ -2,6 +2,7 @@ package com.textEditor.core;
 
 import java.awt.BorderLayout;
 import java.awt.Font;
+import java.lang.reflect.Method;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -10,10 +11,10 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import com.textEditor.commands.*;
 import com.textEditor.log.Log;
 import com.textEditor.memento.CareTaker;
 import com.textEditor.memento.Memento;
+import com.textEditor.memento.Pair;
 
 /**
  * @(#) Core.java
@@ -22,7 +23,6 @@ import com.textEditor.memento.Memento;
 public class Core extends Observable implements CoreInterface {
 
 	private CareTaker careTaker = new CareTaker();
-	private CareTaker careTakerUndoRedo = new CareTaker();
 	private StringBuffer buffer = new StringBuffer();
 	private String clipboard = new String();
 	private Log logger;
@@ -64,34 +64,32 @@ public class Core extends Observable implements CoreInterface {
 	}
 
 	public void play() {
+		Selection position = new Selection(0, 0, "");
 		for (int i=0;i<careTaker.size();i++) {
-			Memento memento = careTaker.getMemento(i);
-			String className = memento.getSavedState().getString("command");
-			System.out.println(className);
-			System.out.println(memento.getSavedState().toString());
-			Command command = null;
-			switch (className) {
-            case "Insert":
-            	command = new Insert(this);
+			Pair<String, Memento> pair = careTaker.getMemento(i);
+			String methodName = (String) pair.getL();
+			Memento memento = (Memento) pair.getR();
+			position.restoreFromMemento(memento);
+			switch (methodName) {
+            case "insert":
+            	this.insert(position);
                 break;
-            case "Delete":
-            	command = new Delete(this);
+            case "delete":
+            	this.delete(position);
                 break;
-            case "Replace":
-            	command = new Replace(this);
+            case "replace":
+            	this.replace(position);
                 break;
-            case "Cut":
-            	command = new Cut(this);
+            case "cut":
+            	this.cut(position);
                 break;
-            case "Copy":
-            	command = new Copy(this);
+            case "copy":
+            	this.copy(position);
                 break;
-            case "Paste":
-            	command = new Paste(this);
+            case "paste":
+            	this.paste(position);
                 break;
 			}
-			command.restoreFromMemento(memento);
-			command.execute(command.getSelection());
 		}
 		stop();
 	}
@@ -108,11 +106,8 @@ public class Core extends Observable implements CoreInterface {
 	public void insert(Selection position) {
 		assert position.getStart() <= buffer.length();
 		assert position.getEnd() <= buffer.length();
-		Insert command = new Insert(this);
-		command.setPosition(position);
-		careTakerUndoRedo.addMemento(command.saveToMemento());
 		if (isRecording()) {
-			careTaker.addMemento(command.saveToMemento());
+			careTaker.addMemento("insert", position.saveToMemento());
 		}
 		if (buffer.length() >= position.getEnd()) {
 			buffer.insert(position.getStart(), position.getContent());
@@ -125,13 +120,8 @@ public class Core extends Observable implements CoreInterface {
 	}
 
 	public void delete(Selection position) {
-		assert position.getStart() <= buffer.length();
-		assert position.getEnd() <= buffer.length();
-		Delete command = new Delete(this);
-		command.setPosition(position);
-		careTakerUndoRedo.addMemento(command.saveToMemento());
 		if (isRecording()) {
-			careTaker.addMemento(command.saveToMemento());
+			careTaker.addMemento("delete", position.saveToMemento());
 		}
 		// buffer end argument is the last index of the string, not the length.
 		if (buffer.length() >= position.getEnd()) {
@@ -145,13 +135,8 @@ public class Core extends Observable implements CoreInterface {
 	}
 
 	public void replace(Selection position) {
-		assert position.getStart() <= buffer.length();
-		assert position.getEnd() <= buffer.length();
-		Replace command = new Replace(this);
-		command.setPosition(position);
-		careTakerUndoRedo.addMemento(command.saveToMemento());
 		if (isRecording()) {
-			careTaker.addMemento(command.saveToMemento());
+			careTaker.addMemento("replace", position.saveToMemento());
 		}
 		if (buffer.length() >= position.getEnd()) {
 			logger.fine(position.toString());
@@ -161,11 +146,8 @@ public class Core extends Observable implements CoreInterface {
 	}
 
 	public void cut(Selection position) {
-		Cut command = new Cut(this);
-		command.setPosition(position);
-		careTakerUndoRedo.addMemento(command.saveToMemento());
 		if (isRecording()) {
-			careTaker.addMemento(command.saveToMemento());
+			careTaker.addMemento("cut", position.saveToMemento());
 		}
 		if (buffer.length() >= position.getEnd()) {
 			assert position.getStart() <= buffer.length();
@@ -177,11 +159,8 @@ public class Core extends Observable implements CoreInterface {
 	}
 
 	public void copy(Selection position) {
-		Copy command = new Copy(this);
-		command.setPosition(position);
-		careTakerUndoRedo.addMemento(command.saveToMemento());
 		if (isRecording()) {
-			careTaker.addMemento(command.saveToMemento());
+			careTaker.addMemento("copy", position.saveToMemento());
 		}
 		if (buffer.length() >= position.getEnd()) {
 			assert position.getStart() <= buffer.length();
@@ -192,11 +171,8 @@ public class Core extends Observable implements CoreInterface {
 	}
 	
 	public void paste(Selection position) {
-		Paste command = new Paste(this);
-		command.setPosition(position);
-		careTakerUndoRedo.addMemento(command.saveToMemento());
 		if (isRecording()) {
-			careTaker.addMemento(command.saveToMemento());
+			careTaker.addMemento("paste", position.saveToMemento());
 		}
 		if (buffer.length() >= position.getEnd()) {
 			logger.fine(position.toString());

@@ -2,15 +2,15 @@ package com.textEditor.memento;
 
 import java.util.Stack;
 
-public class CareTaker extends Stack<Memento> {
-			
-	private static final long serialVersionUID = -5441904950627315914L;
+public class CareTaker extends Stack<Pair<String, Memento>> {
 
-	public void addMemento(Memento m) {
-		push(m);
+	private static final long serialVersionUID = 1L;
+
+	public void addMemento(String string, Memento m) {
+		push(new Pair<String, Memento>(string, m));
 	}
 	
-	public Memento getMemento(int index) {
+	public Pair<String, Memento> getMemento(int index) {
 		return elementAt(index);
 	}
 }
