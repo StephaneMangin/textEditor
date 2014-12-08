@@ -69,8 +69,7 @@ public class Core extends Observable implements CoreInterface {
 		assert position.getStart() <= buffer.length();
 		assert position.getStart() + position.getEnd() <= buffer.length();
 		// buffer end argument is the last index of the string, not the length.
-		buffer.delete(position.getStart(),
-				position.getStart() + position.getEnd());
+		buffer.delete(position.getStart(), position.getEnd());
 		logger.fine(position.toString());
 		// Mise à jour de la position
 		position.reset();
