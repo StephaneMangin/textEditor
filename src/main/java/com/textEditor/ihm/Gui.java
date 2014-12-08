@@ -303,22 +303,18 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 		int keyCode = e.getKeyCode();
 		int start = jta.getCaretPosition();
 		int end = start + 1;
-		int textLength = jta.getText().length();
-		// In all case, ending index must not be equal or higher than text
-		// length (Index overflow risk)
-		// It means starting index must be at least equal to text length minus 1
-		if (start >= 0) {
-			if (keyCode == KeyEvent.VK_BACK_SPACE) {
-				((TextArea) jta).delete(start, end);
-			}
+		if (jta.getSelectedText() != null) {
+			start = jta.getSelectionStart();
+			end = jta.getSelectionEnd();
 		}
-		if (end <= textLength) {
-			if (keyCode == KeyEvent.VK_DELETE) {
-				((TextArea) jta).delete(start, end);
-				// Bug while using delete. Caret return at the end of the text
-				// ???
-				jta.setCaretPosition(start);
-			}
+		if (keyCode == KeyEvent.VK_BACK_SPACE) {
+			((TextArea) jta).delete(start, end);
+		}
+		if (keyCode == KeyEvent.VK_DELETE) {
+			((TextArea) jta).delete(start, end);
+			// Bug while using delete. Caret return at the end of the text
+			// ???
+			jta.setCaretPosition(start);
 		}
 		chg = true;
 

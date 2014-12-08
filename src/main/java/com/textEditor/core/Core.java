@@ -135,7 +135,7 @@ public class Core extends Observable implements CoreInterface {
 		}
 		// buffer end argument is the last index of the string, not the length.
 		if (buffer.length() >= position.getEnd()) {
-			buffer.delete(position.getStart(), position.getStart() + position.getEnd());
+			buffer.delete(position.getStart(), position.getEnd());
 			logger.fine(position.toString());
 			// Mise à jour de la position
 			position.reset();
