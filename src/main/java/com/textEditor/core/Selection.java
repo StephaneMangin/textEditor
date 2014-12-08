@@ -13,24 +13,38 @@ public class Selection extends Originator {
 	private Integer start = 0;
 	private Integer end = 0;
 	private String content = "";
+	private String prevContent = "";
 	
-	public Selection(Integer start, Integer end, String content) {
+	public Selection() {
+		state = toJson();
+	}
+	
+	public Selection(Integer start, Integer end, String content, String prevContent) {
 		setStart(start);
 		setEnd(end);
 		setContent(content);
+		setPrevContent(prevContent);
 		state = toJson();
 	}
     
 	public void set(JSONObject json) {
 		state = json;
-		System.out.println(json.toString());
 		setStart(json.getInt("start"));
 		setEnd(json.getInt("end"));
 		setContent(json.getString("content"));
+		setPrevContent(json.getString("prevContent"));
 	}
 	
+	private void setPrevContent(String prevContent) {
+		this.prevContent = prevContent;
+	}
+
 	public String getContent() {
 		return content;
+	}
+	
+	public String getPrevContent() {
+		return prevContent;
 	}
 
 	public void setContent(String content) {
@@ -53,14 +67,10 @@ public class Selection extends Originator {
 		this.end = end;
 	}
 
-	public void jump() {
-		setStart(start + content.length());
-		reset();
-	}
-
-	public void reset() {
-		setEnd(0);
-		setContent("");
+	public void previous() {
+		setEnd(start + content.length());
+		setContent(prevContent);
+		setPrevContent("");
 	}
 	
 	public JSONObject toJson() {
@@ -68,11 +78,12 @@ public class Selection extends Originator {
 		json.accumulate("start", start);
 		json.accumulate("end", end);
 		json.accumulate("content", content);
+		json.accumulate("prevContent", prevContent);
 		return json;
 	}
 	
 	public String toString() {
-		return start + "->" + end + "='" + content + "'";
+		return "<Selection (" + start + ">" + end + ")>";
 
 	}
 }

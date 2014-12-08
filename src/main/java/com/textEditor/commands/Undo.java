@@ -7,13 +7,13 @@ import com.textEditor.core.Selection;
  * @(#) Cut.java
  */
 
-public class Stop extends Command {
+public class Undo extends Command {
 
-	public Stop(Core core) {
+	public Undo(Core core) {
 		super(core);
 	}
 
 	public void execute(Selection position) {
-		core.stop();
+		core.undo();
 	}
 }

@@ -1,6 +1,7 @@
 package com.textEditor.commands;
 
 import com.textEditor.core.Core;
+import com.textEditor.core.Selection;
 
 /**
  * @(#) Cut.java
@@ -12,7 +13,7 @@ public class Record extends Command {
 		super(core);
 	}
 
-	public void execute() {
+	public void execute(Selection position) {
 		core.record();
 	}
 }

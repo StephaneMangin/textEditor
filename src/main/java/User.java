@@ -26,7 +26,9 @@ public class User {
 				new Replace(core),
 				new Record(core),
 				new Play(core),
-				new Stop(core));
+				new Stop(core),
+				new Undo(core),
+				new Redo(core));
 	}
 
 	public static void main(String[] args) {
