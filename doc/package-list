@@ -1,1 +1,6 @@
 
+com.textEditor.commands
+com.textEditor.core
+com.textEditor.ihm
+com.textEditor.log
+com.textEditor.memento
