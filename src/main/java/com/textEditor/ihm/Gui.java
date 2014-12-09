@@ -1,8 +1,6 @@
 package com.textEditor.ihm;
 
 import javax.swing.*;
-import javax.swing.undo.UndoManager;
-
 import com.textEditor.commands.*;
 import com.textEditor.core.*;
 import com.textEditor.log.*;
@@ -16,20 +14,9 @@ import java.util.Observer;
 public class Gui extends JFrame implements GuiInterface, Observer, ActionListener, KeyListener {
 
 	private static final long serialVersionUID = 1L;
-	private Cut cut;
-	private Copy copy;
-	private Paste paste;
-	private Insert insert;
-	private Delete delete;
-	private Replace replace;
-	private Record record;
-	private Play play;
-	private Stop stop;
-	private Undo undo;
-	private Redo redo;
 
 	private JTextArea jta;
-	protected UndoManager undoManager = new UndoManager();
+	private boolean chg;
 	private JScrollPane jscroll;
 
 	private JToolBar jtbar;
@@ -44,48 +31,34 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 	private ImageIcon iNew, iOpen, iSave, iCut, iCopy, iPaste, iRecord, iPlay, iStop, iRedo, iUndo;
 
 	private String fname;
-	private boolean chg;
 	private Log logger;
 	private int selectionStart;
 	private int selectionEnd;
+	private String selectionText;
+	private CommandInvoker invoker;
 
-	@SuppressWarnings("serial")
 	private class TextArea extends JTextArea {
 
-		@Override
+		private static final long serialVersionUID = 1L;
+
 		public void insert(String str, int pos) {
 			Selection position = new Selection(pos, pos, str, "");
-			Gui.this.insert.execute(position);
-			bttnundo.setEnabled(true);
-			eundo.setEnabled(true);
+			invoker.invoke(new Insert(), position);
 		}
 
-		@Override
 		public void append(String str) {
-			int pos = getText().length() - 1;
-			Selection position = new Selection(pos, pos, str, "");
-			Gui.this.insert.execute(position);
-			bttnundo.setEnabled(true);
-			eundo.setEnabled(true);
+			insert(str, getText().length());
 		}
 
-		@Override
 		public void replaceRange(String str, int pos, int end) {
-			if (str == "") {
-				delete(pos, end);
-			} else {
-				replaceSelection(str);
-			}
+			replaceSelection(str);
 		}
 		
 		public void delete(int start, int end) {
-			Selection position = new Selection(start, end, "", getSelectedText());
-			Gui.this.delete.execute(position);
-			bttnundo.setEnabled(true);
-			eundo.setEnabled(true);
+			Selection position = new Selection(start, end, "", selectionText);
+			invoker.invoke(new Delete(), position);
 		}
 
-		@Override
 		public void replaceSelection(String str) {
 			// In all cases, JTextArea call this method whatever the currently
 			// operation
@@ -97,34 +70,23 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 				delete(getSelectionStart(), getSelectionEnd());
 			} else {
 				Selection position = new Selection(getSelectionStart(), getSelectionEnd(), str, getSelectedText());
-				Gui.this.replace.execute(position);
-				bttnundo.setEnabled(true);
-				eundo.setEnabled(true);
+				invoker.invoke(new Replace(), position);
 			}
 		}
 
-		@Override
 		public void cut() {
 			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText(),  getSelectedText());
-			Gui.this.cut.execute(position);
-			bttnundo.setEnabled(true);
-			eundo.setEnabled(true);
+			invoker.invoke(new Cut(), position);
 		}
 
-		@Override
 		public void paste() {
 			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText(), getSelectedText());
-			Gui.this.paste.execute(position);
-			bttnundo.setEnabled(true);
-			eundo.setEnabled(true);
+			invoker.invoke(new Paste(), position);
 		}
 
-		@Override
 		public void copy() {
 			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText(), getSelectedText());
-			Gui.this.copy.execute(position);
-			bttnundo.setEnabled(true);
-			eundo.setEnabled(true);
+			invoker.invoke(new Copy(), position);
 		}
 	}
 
@@ -145,7 +107,7 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 		initMenu();
 		setJMenuBar(mbar);
 		initToolbar();
-		add(jtbar, BorderLayout.WEST);
+		add(jtbar, BorderLayout.NORTH);
 
 		setSize(800, 600);
 		setVisible(true);
@@ -154,29 +116,8 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 		logger.info("Done.");
 	}
 
-	public void setCommands(
-			Copy copy,
-			Paste paste,
-			Cut cut,
-			Insert insert,
-			Delete delete,
-			Replace replace,
-			Record record,
-			Play play,
-			Stop stop,
-			Undo undo,
-			Redo redo) {
-		this.copy = copy;
-		this.paste = paste;
-		this.cut = cut;
-		this.insert = insert;
-		this.delete = delete;
-		this.replace = replace;
-		this.record = record;
-		this.play = play;
-		this.stop = stop;
-		this.undo = undo;
-		this.redo = redo;
+	public void setCommandInvoker(CommandInvoker invoker) {
+		this.invoker = invoker;
 	}
 	
 	/** Returns an ImageIcon, or null if the path was invalid. */
@@ -322,7 +263,8 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 	}
 
 	private void initToolbar() {
-		jtbar = new JToolBar(1);
+		jtbar = new JToolBar();
+		jtbar.setFloatable(false);
 
 		bttnnew = new JButton(iNew);
 		bttnopen = new JButton(iOpen);
@@ -370,32 +312,37 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-		// First we keep the positions of the cursor and the selection if any
 		selectionStart = jta.getCaret().getDot();
 		selectionEnd = jta.getCaret().getMark();
-		// Then we can use the previous saved position for DELETE and BACKSPACE
-		// ATTENTION : The position indices are thus after action is called
-		int keyCode = e.getKeyCode();
-		if (keyCode == KeyEvent.VK_DELETE) {
-			((TextArea) jta).delete(selectionStart, selectionEnd + 1);
-			// Bug while using delete. Caret return at the end of the text
-			jta.setCaretPosition(selectionStart);
+		// First we keep the positions of the cursor and the selection if any
+		if (selectionStart > selectionEnd) {
+			int backup = selectionStart;
+			selectionStart = selectionEnd;
+			selectionEnd = backup;
 		}
+		selectionText = jta.getText().substring(selectionStart, selectionEnd);
 		chg = true;
 	}
 
 	@Override
 	public void keyReleased(KeyEvent e) {
+		// Then we can use the previous saved position for DELETE and BACKSPACE
+		// ATTENTION : The position indices are thus after action is called
 		int keyCode = e.getKeyCode();
-		if (keyCode == KeyEvent.VK_BACK_SPACE) {
-			((TextArea) jta).delete(selectionStart - 1, selectionEnd);
-			// Bug while using delete. Caret return at the end of the text
-			jta.setCaretPosition(selectionStart - 1);
+		if (keyCode == KeyEvent.VK_DELETE) {
+			if (selectionStart == selectionEnd) {
+				selectionEnd++;
+			}
+			((TextArea) jta).delete(selectionStart, selectionEnd);
+		} else if (keyCode == KeyEvent.VK_BACK_SPACE) {
+			if (selectionStart == selectionEnd) {
+				selectionStart--;
+			}
+			((TextArea) jta).delete(selectionStart, selectionEnd);
 		}
 		chg = true;
 	}
 
-	@Override
 	public void keyTyped(KeyEvent e) {
 		chg = true;
 	}
@@ -404,27 +351,13 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 
 		if (e.getSource().equals(bttncut) || e.getSource().equals(ecut)) {
 			jta.cut();
-			bttnundo.setEnabled(true);
-			eundo.setEnabled(true);
 		} else if (e.getSource().equals(bttncopy) || e.getSource().equals(ecopy)) {
 			jta.copy();
-			bttnundo.setEnabled(true);
-			eundo.setEnabled(true);
 		} else if (e.getSource().equals(bttnpaste) || e.getSource().equals(epaste)) {
 			jta.paste();
-			bttnundo.setEnabled(true);
-			eundo.setEnabled(true);
 		} else if (e.getSource().equals(bttnrec) || e.getSource().equals(mrec)) {
 			record();
-			bttnrec.setEnabled(false);
-			mrec.setEnabled(false);
-			bttnstop.setEnabled(true);
-			mrecstop.setEnabled(true);
 		} else if (e.getSource().equals(bttnstop) || e.getSource().equals(mrecstop)) {
-			bttnrec.setEnabled(true);
-			mrec.setEnabled(true);
-			bttnstop.setEnabled(false);
-			mrecstop.setEnabled(false);
 			stop();
 		} else if (e.getSource().equals(bttnplay) || e.getSource().equals(mplay)) {
 			play();
@@ -434,7 +367,7 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 			fname = "";
 			chg = false;
 			Selection position = new Selection(0, jta.getText().length(), "", jta.getText());
-			Gui.this.delete.execute(position);
+			invoker.invoke(new Reset(), position);
 		} else if (e.getSource().equals(bttnopen) || e.getSource().equals(fopen)) {
 			open();
 		} else if (e.getSource().equals(bttnundo) || e.getSource().equals(eundo)) {
@@ -449,32 +382,23 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 	}
 	
 	public void undo() {
-		bttnredo.setEnabled(true);
-		eredo.setEnabled(true);
-		Selection position = new Selection();
-		Gui.this.undo.execute(position);
+		invoker.invoke(new Undo());
 	}
 	
 	public void redo() {
-		bttnundo.setEnabled(true);
-		eundo.setEnabled(true);
-		Selection position = new Selection();
-		Gui.this.redo.execute(position);
+		invoker.invoke(new Redo());
 	}
 	
 	public void record() {
-		this.record.execute(new Selection());
-		logger.info("Macro recording...");
+		invoker.invoke(new Record());
 	}
 
 	public void stop() {
-		this.stop.execute(new Selection());
-		logger.info("Macro stopped.");
+		invoker.invoke(new Stop());
 	}
 
 	public void play() {
-		this.play.execute(new Selection());
-		logger.info("Macro playing...");
+		invoker.invoke(new Play());
 	}
 
 	public void exit() {
@@ -560,9 +484,18 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 		if (((Core) observable).getBuffer() != jta.getText()) {
 			jta.setText(observable.toString());
 		}
+		jta.setCaretPosition(((Core) observable).getCurrentPosition());
 		bttnundo.setEnabled(((Core) observable).isUndo());
 		bttnredo.setEnabled(((Core) observable).isRedo());
 		eundo.setEnabled(((Core) observable).isUndo());
 		eredo.setEnabled(((Core) observable).isRedo());
+
+		bttnrec.setEnabled(!((Core) observable).isRecording());
+		bttnplay.setEnabled(!((Core) observable).isPlaying());
+		bttnstop.setEnabled(((Core) observable).isRecording());
+		mrec.setEnabled(!((Core) observable).isRecording());
+		mplay.setEnabled(!((Core) observable).isPlaying());
+		mrecstop.setEnabled(((Core) observable).isRecording());
 	}
+
 }

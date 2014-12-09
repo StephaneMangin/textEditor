@@ -7,28 +7,21 @@ import com.textEditor.core.*;
 import com.textEditor.ihm.Gui;
 
 /**
+ * This is the User class which initiate the application
+ * 
  * @(#) User.java
  */
 
 public class User {
 
-	private static Gui gui = new Gui("Basic Text Editor");;
+	private static Gui gui = new Gui("Basic Text Editor");
 	private static Core core = new Core();
+	private static CommandInvoker invoker;
 
 	public User() {
 		core.addObserver((Observer) gui);
-		gui.setCommands(
-				new Copy(core),
-				new Paste(core),
-				new Cut(core),
-				new Insert(core),
-				new Delete(core),
-				new Replace(core),
-				new Record(core),
-				new Play(core),
-				new Stop(core),
-				new Undo(core),
-				new Redo(core));
+		CommandInvoker invoker =  new CommandInvoker(core);
+		gui.setCommandInvoker(invoker);
 	}
 
 	public static void main(String[] args) {

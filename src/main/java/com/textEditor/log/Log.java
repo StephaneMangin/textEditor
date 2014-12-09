@@ -31,11 +31,6 @@ public class Log {
 		ConsoleHandler ch = new ConsoleHandler();
 		ch.setFormatter(new MyFormatter());
 		log.addHandler(ch);
-		/*
-		 * try { Handler fh = new FileHandler("ACO_TP.log"); fh.setFormatter(new
-		 * MyFormatter()); log.addHandler(fh); } catch (SecurityException |
-		 * IOException e) { e.printStackTrace(); }
-		 */
 		log.setLevel(Level.ALL);
 	}
 
@@ -44,8 +39,7 @@ public class Log {
 	}
 
 	private String getMethodName() {
-		return Thread.currentThread().getStackTrace()[4].getMethodName()
-				.toString();
+		return Thread.currentThread().getStackTrace()[4].getMethodName().toString();
 	}
 
 	public void log(Level level, String msg) {

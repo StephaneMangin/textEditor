@@ -1,12 +1,12 @@
 package com.textEditor.commands;
 
 /**
- * @(#) Paste.java
+ * @(#) Cut.java
  */
 
-public class Paste extends Command {
+public class Reset extends Command {
 
 	public void execute() {
-		core.paste(position);
+		core.reset();
 	}
 }

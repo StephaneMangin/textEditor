@@ -11,12 +11,20 @@ import com.textEditor.core.Selection;
 public class Command implements CommandInterface {
 
 	protected Core core;
+	protected Selection position;
 
-	public Command(Core core) {
+	@Override
+	public void setCore(Core core) {
 		this.core = core;
 	}
-    
-	public void execute(Selection position) {
+
+	@Override
+	public void setPosition(Selection position) {
+		this.position = position;
+	}
+
+	@Override
+	public void execute() {
 		return;
 	}
 }

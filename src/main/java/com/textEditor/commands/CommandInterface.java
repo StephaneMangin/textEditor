@@ -1,5 +1,6 @@
 package com.textEditor.commands;
 
+import com.textEditor.core.Core;
 import com.textEditor.core.Selection;
 
 /**
@@ -8,6 +9,8 @@ import com.textEditor.core.Selection;
 
 public interface CommandInterface {
 
-	public void execute(Selection position);
+	public void setCore(Core core);
+	public void setPosition(Selection position);
+	public void execute();
 
 }

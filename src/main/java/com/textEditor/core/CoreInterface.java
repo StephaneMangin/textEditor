@@ -10,7 +10,8 @@ public interface CoreInterface {
 	public String getClipboard();
 	public boolean isRedo();
 	public boolean isUndo();
-	public void reset(Selection position);
+	public boolean isRecording();
+	public boolean isPlaying();
 	public void insert(Selection position);
 	public void delete(Selection position);
 	public void replace(Selection position);
@@ -22,6 +23,7 @@ public interface CoreInterface {
 	public void stop();
 	public void undo();
 	public void redo();
+	public void reset();
 	
 	public String toString();
 }
