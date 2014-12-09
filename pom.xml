@@ -44,4 +44,6 @@
         	<version>4.11</version>
         </dependency>
     </dependencies>
+    <name>TextEditor</name>
+    <description>TP ACO</description>
 </project>

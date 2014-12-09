@@ -43,7 +43,8 @@ public class Log {
 	}
 
 	public void log(Level level, String msg) {
-		log.logp(level, getClassName(), getMethodName(), msg);
+		System.out.println("[" + level.getName() + "] " +getClassName() + "::" + getMethodName() + ":: " + msg);
+		//log.logp(level, getClassName(), getMethodName(), msg);
 	}
 
 	public void severe(String msg) {

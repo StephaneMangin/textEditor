@@ -170,6 +170,8 @@ public class Core extends Observable implements CoreInterface {
 			}
 		}
 		playing = false;
+		setChanged();
+		notifyObservers();
 	}
 
 	/* (non-Javadoc)
@@ -178,6 +180,8 @@ public class Core extends Observable implements CoreInterface {
 	@Override
 	public void record() {
 		this.recording = true;
+		setChanged();
+		notifyObservers();
 		recordCareTaker = new CareTaker();
 		logger.info("recording ...");
 	}
@@ -188,6 +192,8 @@ public class Core extends Observable implements CoreInterface {
 	@Override
 	public void stop() {
 		this.recording = false;
+		setChanged();
+		notifyObservers();
 		logger.info("record stopped ...");
 	}
 
@@ -214,13 +220,13 @@ public class Core extends Observable implements CoreInterface {
 	public void undo() {
 		undoRedo = true;
 		if (isUndo()) {
+			logger.info("in index " + undoRedoPosition);
 			Selection position = new Selection();
 			Pair<String, Memento> reference = undoRedoCareTaker.getMemento(undoRedoPosition);
 			position.restoreFromMemento(reference.getMemento());
 			switch (reference.getReference()) {
 		        case "insert":
 		    		position.previous();
-		    		System.out.println(position.toJson().toString());
 		        	this.delete(position);
 		            break;
 		        case "delete":
@@ -237,7 +243,7 @@ public class Core extends Observable implements CoreInterface {
 		            break;
 		        case "copy":
 		    		position.previous();
-		        	this.delete(position);
+		    		clipboard = position.getContent();
 		            break;
 		        case "paste":
 		    		position.previous();
@@ -248,6 +254,8 @@ public class Core extends Observable implements CoreInterface {
 			logger.info(reference.getReference() + "::" + position.toJson().toString());
 		}
 		undoRedo = false;
+		setChanged();
+		notifyObservers();
 	}
 
 	/* (non-Javadoc)
@@ -258,6 +266,7 @@ public class Core extends Observable implements CoreInterface {
 		undoRedo = true;
 		if (isRedo()) {
 			undoRedoPosition++;
+			logger.info("in index " + undoRedoPosition);
 			Selection position = new Selection();
 			Pair<String, Memento> reference = undoRedoCareTaker.getMemento(undoRedoPosition);
 			position.restoreFromMemento(reference.getMemento());
@@ -272,18 +281,19 @@ public class Core extends Observable implements CoreInterface {
 	        	this.replace(position);
 	            break;
 	        case "cut":
-	        	this.cut(position);
+	        	this.delete(position);
 	            break;
 	        case "copy":
-	        	this.copy(position);
 	            break;
 	        case "paste":
-	        	this.paste(position);
+	        	this.replace(position);
 	            break;
 			}
 			logger.info(reference.getReference() + "::" + position.toJson().toString());
 		}
 		undoRedo = false;
+		setChanged();
+		notifyObservers();
 	}
 	
 	/**
@@ -295,12 +305,15 @@ public class Core extends Observable implements CoreInterface {
 	 */
 	private void saveUndoRedo(String methodName, Selection position) {
 		if (!undoRedo) {
+			// On réinitialise le compteur si des redos restent alors qu'une opération est effectuée
 			if (isRedo()) {
 				undoRedoCareTaker.setSize(undoRedoPosition + 1);
 			}
 			undoRedoCareTaker.addMemento(methodName, position.saveToMemento());
 			undoRedoPosition++;
-			logger.fine("in index " + undoRedoPosition);
+			logger.info("in index " + undoRedoPosition);
+			setChanged();
+			notifyObservers();
 		}
 	}
 
@@ -309,10 +322,16 @@ public class Core extends Observable implements CoreInterface {
 	 */
 	@Override
 	public void insert(Selection position) {
-		saveUndoRedo("insert", position);
+		// First save metadatas to Selection
+		position.setPrevContent("");
+		if (recording) {
+			recordCareTaker.addMemento("insert", position.saveToMemento());
+		}
+		// Apply the operation
 		buffer.insert(position.getStart(), position.getContent());
-		logger.info(position.toJson().toString());
+		saveUndoRedo("insert", position);
 		setCurrentPosition(position.getStart() + position.getContent().length());
+		logger.info(position.toJson().toString());
 	}
 
 	/* (non-Javadoc)
@@ -320,13 +339,19 @@ public class Core extends Observable implements CoreInterface {
 	 */
 	@Override
 	public void delete(Selection position) {
-		saveUndoRedo("delete", position);
+		// First save metadatas to Selection
+		position.setContent("");
+		position.setPrevContent(buffer.substring(position.getStart(), position.getEnd()));
 		if (recording) {
 			recordCareTaker.addMemento("delete", position.saveToMemento());
 		}
+		// Apply the operation
 		buffer.delete(position.getStart(), position.getEnd());
-		logger.info(position.toJson().toString());
+		// Update the cursor
 		setCurrentPosition(position.getStart());
+		// Undo/redo updating
+		saveUndoRedo("delete", position);
+		logger.info(position.toJson().toString());
 	}
 
 	/* (non-Javadoc)
@@ -334,13 +359,18 @@ public class Core extends Observable implements CoreInterface {
 	 */
 	@Override
 	public void replace(Selection position) {
-		saveUndoRedo("replace", position);
+		// First save metadatas to Selection
+		position.setPrevContent(buffer.substring(position.getStart(), position.getEnd()));
 		if (recording) {
 			recordCareTaker.addMemento("replace", position.saveToMemento());
 		}
-		logger.info(position.toJson().toString());
+		// Apply the operation
 		buffer.replace(position.getStart(), position.getEnd(), position.getContent());
+		// Update the cursor
 		setCurrentPosition(position.getStart() + position.getContent().length());
+		// Undo/redo updating
+		saveUndoRedo("replace", position);
+		logger.info(position.toJson().toString());
 	}
 
 	/* (non-Javadoc)
@@ -348,11 +378,19 @@ public class Core extends Observable implements CoreInterface {
 	 */
 	@Override
 	public void cut(Selection position) {
+		// First save metadatas to Selection
+		clipboard = buffer.substring(position.getStart(), position.getEnd());
+		position.setPrevContent(clipboard);
+		if (recording) {
+			recordCareTaker.addMemento("replace", position.saveToMemento());
+		}
+		// Apply the operation
+		buffer.delete(position.getStart(), position.getEnd());
+		// Update the cursor
+		setCurrentPosition(position.getStart());
+		// Undo/redo updating
 		saveUndoRedo("cut", position);
 		logger.info(position.toJson().toString());
-		clipboard = buffer.substring(position.getStart(), position.getEnd());
-		buffer.delete(position.getStart(), position.getEnd());
-		setCurrentPosition(position.getStart() + clipboard.length());
 	}
 
 	/* (non-Javadoc)
@@ -360,15 +398,22 @@ public class Core extends Observable implements CoreInterface {
 	 */
 	@Override
 	public void copy(Selection position) {
-		saveUndoRedo("copy", position);
 		if (recording) {
 			recordCareTaker.addMemento("copy", position.saveToMemento());
 			undoRedoPosition++;
 		}
-		buffer.insert(position.getStart(), position.getContent());
+		// First save metadatas
+		position.setPrevContent(clipboard);
+		if (recording) {
+			recordCareTaker.addMemento("replace", position.saveToMemento());
+		}
+		// Apply the operation
+		clipboard = buffer.substring(position.getStart(), position.getEnd());
+		// Update the cursor
+		setCurrentPosition(position.getStart());
+		// Undo/redo updating
+		saveUndoRedo("copy", position);
 		logger.info(position.toJson().toString());
-		clipboard = position.getContent();
-		setCurrentPosition(position.getStart() + position.getContent().length());
 	}
 
 	/* (non-Javadoc)
@@ -376,16 +421,21 @@ public class Core extends Observable implements CoreInterface {
 	 */
 	@Override
 	public void paste(Selection position) {
-		saveUndoRedo("paste", position);
-		logger.fine(position.toString());
 		if (clipboard == null) {
 			logger.warning("Clipboard is not set !");
 		}
-		buffer.insert(position.getStart(), clipboard);
-		position.setPrevContent(position.getContent());
+		// First save metadatas to Selection
 		position.setContent(clipboard);
+		position.setPrevContent(buffer.substring(position.getStart(), position.getEnd()));
+		if (recording) {
+			recordCareTaker.addMemento("replace", position.saveToMemento());
+		}
+		// Apply the operation
+		buffer.replace(position.getStart(), position.getEnd(), clipboard);
+		setCurrentPosition(position.getStart() + clipboard.length());
+		// Undo/redo updating
+		saveUndoRedo("paste", position);
 		logger.info(position.toJson().toString());
-		setCurrentPosition(position.getStart() + position.getContent().length());
 	}
 
 	/**
@@ -402,7 +452,7 @@ public class Core extends Observable implements CoreInterface {
 	 * @param pos
 	 */
 	private void setCurrentPosition(int pos) {
-		currentPosition = pos;		
+		currentPosition = pos;
 		setChanged();
 		notifyObservers();
 	}
@@ -413,6 +463,7 @@ public class Core extends Observable implements CoreInterface {
 	@Override
 	public void reset() {
 		undoRedoCareTaker = new CareTaker();
+		recordCareTaker = new CareTaker();
 		undoRedoPosition = -1;
 		clipboard = "";
 		buffer.setLength(0);

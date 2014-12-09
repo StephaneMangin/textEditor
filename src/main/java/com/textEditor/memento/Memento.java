@@ -11,6 +11,10 @@ public class Memento {
     	state = stateToSave;
     }
     
+    /**
+     * Return the state of the memento
+     * @return
+     */
     public JSONObject getSavedState() {
     	return state;
     }

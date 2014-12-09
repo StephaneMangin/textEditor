@@ -1,6 +1,6 @@
 package com.textEditor.ihm;
 
-import com.textEditor.commands.CommandInvoker;
+import com.textEditor.command.CommandInvoker;
 
 /**
  * Main class that defines all the mandatory operations for a class implementation

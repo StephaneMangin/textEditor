@@ -2,7 +2,7 @@ package com.textEditor.ihm;
 
 import javax.swing.*;
 
-import com.textEditor.commands.*;
+import com.textEditor.command.*;
 import com.textEditor.core.*;
 import com.textEditor.log.*;
 
@@ -29,7 +29,6 @@ public class Gui extends JFrame implements ActionListener, GuiInterface, KeyList
 	private Log logger;
 	private int selectionStart;
 	private int selectionEnd;
-	private String selectionText;
 	private CommandInvoker invoker;
 	protected TextArea jta;
 	protected boolean chg;
@@ -61,7 +60,7 @@ public class Gui extends JFrame implements ActionListener, GuiInterface, KeyList
 		 * @see javax.swing.JTextArea#insert(java.lang.String, int)
 		 */
 		public void insert(String str, int pos) {
-			Selection position = new Selection(pos, pos, str, "");
+			Selection position = new Selection(pos, pos, str);
 			invoker.invoke(new Insert(), position);
 		}
 
@@ -84,7 +83,7 @@ public class Gui extends JFrame implements ActionListener, GuiInterface, KeyList
 		 * @param end
 		 */
 		public void delete(int start, int end) {
-			Selection position = new Selection(start, end, "", selectionText);
+			Selection position = new Selection(start, end);
 			invoker.invoke(new Delete(), position);
 		}
 
@@ -101,7 +100,7 @@ public class Gui extends JFrame implements ActionListener, GuiInterface, KeyList
 			} else if (str == "") {
 				delete(getSelectionStart(), getSelectionEnd());
 			} else {
-				Selection position = new Selection(getSelectionStart(), getSelectionEnd(), str, getSelectedText());
+				Selection position = new Selection(getSelectionStart(), getSelectionEnd(), str);
 				invoker.invoke(new Replace(), position);
 			}
 		}
@@ -110,7 +109,7 @@ public class Gui extends JFrame implements ActionListener, GuiInterface, KeyList
 		 * @see javax.swing.text.JTextComponent#cut()
 		 */
 		public void cut() {
-			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText(),  getSelectedText());
+			Selection position = new Selection(getSelectionStart(), getSelectionEnd());
 			invoker.invoke(new Cut(), position);
 		}
 
@@ -118,7 +117,7 @@ public class Gui extends JFrame implements ActionListener, GuiInterface, KeyList
 		 * @see javax.swing.text.JTextComponent#paste()
 		 */
 		public void paste() {
-			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText(), getSelectedText());
+			Selection position = new Selection(getSelectionStart(), getSelectionEnd());
 			invoker.invoke(new Paste(), position);
 		}
 
@@ -126,7 +125,7 @@ public class Gui extends JFrame implements ActionListener, GuiInterface, KeyList
 		 * @see javax.swing.text.JTextComponent#copy()
 		 */
 		public void copy() {
-			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText(), getSelectedText());
+			Selection position = new Selection(getSelectionStart(), getSelectionEnd());
 			invoker.invoke(new Copy(), position);
 		}
 		
@@ -134,9 +133,7 @@ public class Gui extends JFrame implements ActionListener, GuiInterface, KeyList
 		 * @see java.util.Observer#update(java.util.Observable, java.lang.Object)
 		 */
 		public void update(Observable observable, Object obj) {
-			if (((Core) observable).getBuffer() != getText()) {
-				setText(((Core) observable).getBuffer());
-			}
+			setText(((Core) observable).getBuffer());
 			setCaretPosition(((Core) observable).getCurrentPosition());
 		}
 	}
@@ -394,7 +391,7 @@ public class Gui extends JFrame implements ActionListener, GuiInterface, KeyList
 			selectionStart = selectionEnd;
 			selectionEnd = backup;
 		}
-		selectionText = jta.getText().substring(selectionStart, selectionEnd);
+		jta.getText().substring(selectionStart, selectionEnd);
 		chg = true;
 	}
 

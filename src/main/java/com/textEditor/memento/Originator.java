@@ -7,27 +7,39 @@ import net.sf.json.JSONObject;
 public class Originator {
 	
     protected JSONObject state = new JSONObject();
-	private Log logger;
+	protected Log logger;
  
     public Originator() {
     	logger = new Log(this);
     }
     
+    /**
+     * Set the state
+     * @param state
+     */
     public void set(JSONObject state) {
-		logger.info("Originator: etat affecte a: " + state.toString());
+		logger.info("Originator: etat affecte");
         this.state = state;
     }
  
+    /**
+     * Return a memento to be process by a CareTaker
+     * @return
+     */
     public Memento saveToMemento() {
     	logger.info("Originator: sauvegarde dans le memento =>" + state.toString());
         return new Memento(state);
     }
     
+    /**
+     * Restore the state with a memento
+     * @param m
+     */
     public void restoreFromMemento(Object m) {
         if (m instanceof Memento) {
             Memento memento = (Memento)m;
             set(memento.getSavedState());
-            logger.info("Originator: Etat après restauration: " + memento.getSavedState().toString());
+            logger.info("Originator: Etat après restauration => " + state.toString());
         }
     }
  }

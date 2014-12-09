@@ -18,17 +18,29 @@ public class Selection extends Originator {
 	public Selection() {
 		state = toJson();
 	}
+
+	public Selection(Integer start, Integer end) {
+		setStart(start);
+		setEnd(end);
+		setContent(content);
+		setPrevContent(prevContent);
+	}
+	
+	public Selection(Integer start, Integer end, String content) {
+		setStart(start);
+		setEnd(end);
+		setContent(content);
+		setPrevContent(prevContent);
+	}
 	
 	public Selection(Integer start, Integer end, String content, String prevContent) {
 		setStart(start);
 		setEnd(end);
 		setContent(content);
 		setPrevContent(prevContent);
-		state = toJson();
 	}
     
 	public void set(JSONObject json) {
-		state = json;
 		setStart(json.getInt("start"));
 		setEnd(json.getInt("end"));
 		setContent(json.getString("content"));
@@ -37,6 +49,8 @@ public class Selection extends Originator {
 	
 	public void setPrevContent(String prevContent) {
 		this.prevContent = prevContent;
+		state.remove("prevContent");
+		state.accumulate("prevContent", prevContent);
 	}
 
 	public String getContent() {
@@ -49,6 +63,8 @@ public class Selection extends Originator {
 
 	public void setContent(String content) {
 		this.content = content;
+		state.remove("content");
+		state.accumulate("content", content);
 	}
 
 	public Integer getStart() {
@@ -57,6 +73,8 @@ public class Selection extends Originator {
 
 	public void setStart(Integer start) {
 		this.start = start;
+		state.remove("start");
+		state.accumulate("start", start);
 	}
 
 	public Integer getEnd() {
@@ -65,6 +83,8 @@ public class Selection extends Originator {
 
 	public void setEnd(Integer end) {
 		this.end = end;
+		state.remove("end");
+		state.accumulate("end", end);
 	}
 
 	public void previous() {
@@ -74,12 +94,7 @@ public class Selection extends Originator {
 	}
 	
 	public JSONObject toJson() {
-		JSONObject json = new JSONObject();
-		json.accumulate("start", start);
-		json.accumulate("end", end);
-		json.accumulate("content", content);
-		json.accumulate("prevContent", prevContent);
-		return json;
+		return state;
 	}
 	
 	public String toString() {

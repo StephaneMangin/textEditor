@@ -10,8 +10,19 @@ public class Pair<String,Memento> {
         this.reference = reference;
         this.memento = memento;
     }
-    public String getReference(){ return reference; }
-    public Memento getMemento(){ return memento; }
-    public void setReference(String l){ this.reference = l; }
-    public void setMemento(Memento r){ this.memento = r; }
+    public String getReference(){
+    	return reference;
+    }
+    
+    public Memento getMemento(){
+    	return memento;
+    }
+    
+    public void setReference(String reference){
+    	this.reference = reference;
+    }
+    
+    public void setMemento(Memento memento){
+    	this.memento = memento;
+    }
 }
