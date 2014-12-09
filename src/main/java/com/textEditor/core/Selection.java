@@ -35,7 +35,7 @@ public class Selection extends Originator {
 		setPrevContent(json.getString("prevContent"));
 	}
 	
-	private void setPrevContent(String prevContent) {
+	public void setPrevContent(String prevContent) {
 		this.prevContent = prevContent;
 	}
 

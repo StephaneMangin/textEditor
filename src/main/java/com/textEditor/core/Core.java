@@ -302,6 +302,7 @@ public class Core extends Observable implements CoreInterface {
 	public void reset() {
 		undoRedoCareTaker = new CareTaker();
 		undoRedoPosition = -1;
+		clipboard = "";
 		buffer.setLength(0);
 		setCurrentPosition(0);
 		logger.info("done !");
