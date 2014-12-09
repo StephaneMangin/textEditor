@@ -16,10 +16,10 @@ public class User {
 
 	private static Gui gui = new Gui("Basic Text Editor");
 	private static Core core = new Core();
-	private static CommandInvoker invoker;
-
+	
 	public User() {
 		core.addObserver((Observer) gui);
+		core.addObserver((Observer) gui.getTextArea());
 		CommandInvoker invoker =  new CommandInvoker(core);
 		gui.setCommandInvoker(invoker);
 	}

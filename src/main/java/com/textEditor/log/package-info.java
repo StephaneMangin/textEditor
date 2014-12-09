@@ -2,6 +2,8 @@
  * 
  */
 /**
+ * Logging module
+ * 
  * @author blacknight
  *
  */

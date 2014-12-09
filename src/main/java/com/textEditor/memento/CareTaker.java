@@ -3,7 +3,7 @@ package com.textEditor.memento;
 import java.util.Stack;
 
 public class CareTaker extends Stack<Pair<String, Memento>> {
-
+	   
 	private static final long serialVersionUID = 1L;
 
 	public void addMemento(String string, Memento m) {

@@ -14,12 +14,12 @@ public class Originator {
     }
     
     public void set(JSONObject state) {
-		logger.fine("Originator: etat affecte a: " + state.toString());
+		logger.info("Originator: etat affecte a: " + state.toString());
         this.state = state;
     }
  
     public Memento saveToMemento() {
-    	logger.fine("Originator: sauvegarde dans le memento =>" + state.toString());
+    	logger.info("Originator: sauvegarde dans le memento =>" + state.toString());
         return new Memento(state);
     }
     
@@ -27,7 +27,7 @@ public class Originator {
         if (m instanceof Memento) {
             Memento memento = (Memento)m;
             set(memento.getSavedState());
-            logger.fine("Originator: Etat après restauration: " + memento.getSavedState().toString());
+            logger.info("Originator: Etat après restauration: " + memento.getSavedState().toString());
         }
     }
  }

@@ -2,6 +2,8 @@
  * 
  */
 /**
+ * Manage datas and functionnalities implementations
+ * 
  * @author blacknight
  *
  */

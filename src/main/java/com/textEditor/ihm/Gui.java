@@ -1,64 +1,96 @@
 package com.textEditor.ihm;
 
 import javax.swing.*;
+
 import com.textEditor.commands.*;
 import com.textEditor.core.*;
 import com.textEditor.log.*;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Font;
 import java.awt.event.*;
 import java.io.*;
 import java.util.Observable;
 import java.util.Observer;
 
-public class Gui extends JFrame implements GuiInterface, Observer, ActionListener, KeyListener {
+/**
+ * IHM class
+ * 
+ * @author blacknight
+ *
+ */
+public class Gui extends JFrame implements ActionListener, GuiInterface, KeyListener, Observer {
 
+	/**
+	 * 
+	 */
 	private static final long serialVersionUID = 1L;
-
-	private JTextArea jta;
-	private boolean chg;
-	private JScrollPane jscroll;
-
-	private JToolBar jtbar;
-	private JButton bttnopen, bttnnew, bttnsave, bttncut, bttncopy, bttnpaste,
-			bttnrec, bttnstop, bttnplay, bttnredo, bttnundo;
-
-	private JMenuBar mbar;
-	private JMenu file, edit, macro;
-	private JMenuItem fnew, fexit, fopen, fsave, mrec, mplay, ecut, ecopy,
-			epaste, eselall, mrecstop, eundo, eredo;
-
-	private ImageIcon iNew, iOpen, iSave, iCut, iCopy, iPaste, iRecord, iPlay, iStop, iRedo, iUndo;
-
 	private String fname;
 	private Log logger;
 	private int selectionStart;
 	private int selectionEnd;
 	private String selectionText;
 	private CommandInvoker invoker;
+	protected TextArea jta;
+	protected boolean chg;
+	protected JScrollPane jscroll;
 
-	private class TextArea extends JTextArea {
+	private JToolBar jtbar;
+	protected JButton bttnopen, bttnnew, bttnsave, bttncut, bttncopy,
+			bttnpaste, bttnrec, bttnstop, bttnplay, bttnredo, bttnundo;
+
+	private JMenuBar mbar;
+	private JMenu file, edit, macro;
+	protected JMenuItem fnew, fexit, fopen, fsave, mrec, mplay, ecut, ecopy,
+			epaste, eselall, mrecstop, eundo, eredo;
+
+	private ImageIcon iNew, iOpen, iSave, iCut, iCopy, iPaste,
+			iRecord, iPlay, iStop, iRedo, iUndo;
+	
+	
+	/**
+	 * Nested class that manage the text and text operations, updates itself when notified
+	 * @author blacknight
+	 *
+	 */
+	public class TextArea extends JTextArea implements Observer {
 
 		private static final long serialVersionUID = 1L;
 
+		/* (non-Javadoc)
+		 * @see javax.swing.JTextArea#insert(java.lang.String, int)
+		 */
 		public void insert(String str, int pos) {
 			Selection position = new Selection(pos, pos, str, "");
 			invoker.invoke(new Insert(), position);
 		}
 
+		/* (non-Javadoc)
+		 * @see javax.swing.JTextArea#append(java.lang.String)
+		 */
 		public void append(String str) {
 			insert(str, getText().length());
 		}
 
+		/* (non-Javadoc)
+		 * @see javax.swing.JTextArea#replaceRange(java.lang.String, int, int)
+		 */
 		public void replaceRange(String str, int pos, int end) {
 			replaceSelection(str);
 		}
 		
+		/**
+		 * @param start
+		 * @param end
+		 */
 		public void delete(int start, int end) {
 			Selection position = new Selection(start, end, "", selectionText);
 			invoker.invoke(new Delete(), position);
 		}
 
+		/* (non-Javadoc)
+		 * @see javax.swing.text.JTextComponent#replaceSelection(java.lang.String)
+		 */
 		public void replaceSelection(String str) {
 			// In all cases, JTextArea call this method whatever the currently
 			// operation
@@ -74,53 +106,45 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 			}
 		}
 
+		/* (non-Javadoc)
+		 * @see javax.swing.text.JTextComponent#cut()
+		 */
 		public void cut() {
 			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText(),  getSelectedText());
 			invoker.invoke(new Cut(), position);
 		}
 
+		/* (non-Javadoc)
+		 * @see javax.swing.text.JTextComponent#paste()
+		 */
 		public void paste() {
 			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText(), getSelectedText());
 			invoker.invoke(new Paste(), position);
 		}
 
+		/* (non-Javadoc)
+		 * @see javax.swing.text.JTextComponent#copy()
+		 */
 		public void copy() {
 			Selection position = new Selection(getSelectionStart(), getSelectionEnd(), getSelectedText(), getSelectedText());
 			invoker.invoke(new Copy(), position);
 		}
-	}
-
-	public Gui(String name) {
-		logger = new Log(this);
-		fname = "";
-		chg = false;
-		setLayout(new BorderLayout());
-
-		jta = new TextArea();
-		jta.setFont(new Font("Arial", Font.PLAIN, 16));
-		jta.addKeyListener(this);
-
-		jscroll = new JScrollPane(jta);
-		add(jscroll, BorderLayout.CENTER);
-
-		initIcons();
-		initMenu();
-		setJMenuBar(mbar);
-		initToolbar();
-		add(jtbar, BorderLayout.NORTH);
-
-		setSize(800, 600);
-		setVisible(true);
-
-		setDefaultCloseOperation(EXIT_ON_CLOSE);
-		logger.info("Done.");
-	}
-
-	public void setCommandInvoker(CommandInvoker invoker) {
-		this.invoker = invoker;
+		
+		/* (non-Javadoc)
+		 * @see java.util.Observer#update(java.util.Observable, java.lang.Object)
+		 */
+		public void update(Observable observable, Object obj) {
+			if (((Core) observable).getBuffer() != getText()) {
+				setText(((Core) observable).getBuffer());
+			}
+			setCaretPosition(((Core) observable).getCurrentPosition());
+		}
 	}
 	
-	/** Returns an ImageIcon, or null if the path was invalid. */
+	/**
+	 *  Returns an ImageIcon, or null if the path was invalid.
+	 *  
+	 */
 	private ImageIcon createImageIcon(String path, String description) {
 		java.net.URL imgURL = getClass().getResource(path);
 		if (imgURL != null) {
@@ -131,6 +155,9 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 		}
 	}
 	
+	/**
+	 * Instantiate icons
+	 */
 	private void initIcons() {
 
 		iNew = createImageIcon("/images/new.gif", "New file");
@@ -144,9 +171,11 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 		iPlay = createImageIcon("/images/play.gif", "Play");
 		iRedo = createImageIcon("/images/redo.gif", "Redo");
 		iUndo = createImageIcon("/images/undo.gif", "Undo");
-		logger.info("Done.");
 	}
 
+	/**
+	 * Instanciate menus and links menus with icons and keylisteners
+	 */
 	private void initMenu() {
 		mbar = new JMenuBar();
 
@@ -259,9 +288,11 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 		mrecstop.setAccelerator(k);
 		k = KeyStroke.getKeyStroke('P', java.awt.Event.CTRL_MASK);
 		mplay.setAccelerator(k);
-		logger.info("Done.");
 	}
 
+	/**
+	 * Instanciate the toolbar and links with icons and actionlisteners
+	 */
 	private void initToolbar() {
 		jtbar = new JToolBar();
 		jtbar.setFloatable(false);
@@ -307,9 +338,52 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 		jtbar.add(bttnrec);
 		jtbar.add(bttnstop);
 		jtbar.add(bttnplay);
+	}
+	
+	public Gui(String name) {
+		fname = name;
+		logger = new Log(this);
+		chg = false;
+		setLayout(new BorderLayout());
+
+		jta = new TextArea();
+		jta.setFont(new Font("Arial", Font.PLAIN, 16));
+		jta.addKeyListener(this);
+
+		jscroll = new JScrollPane(jta);
+		add(jscroll, BorderLayout.CENTER);
+
+		initIcons();
+		initMenu();
+		setJMenuBar(mbar);
+		initToolbar();
+		add(jtbar, BorderLayout.NORTH);
+
+		setSize(800, 600);
+		setVisible(true);
+
+		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		logger.info("Done.");
 	}
 
+	/**
+	 * Return the text area to allow to be add as an observer
+	 * @return
+	 */
+	public TextArea getTextArea() {
+		return jta;
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.textEditor.ihm.GuiInterface#setCommandInvoker(com.textEditor.commands.CommandInvoker)
+	 */
+	public void setCommandInvoker(CommandInvoker invoker) {
+		this.invoker = invoker;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.awt.event.KeyListener#keyPressed(java.awt.event.KeyEvent)
+	 */
 	@Override
 	public void keyPressed(KeyEvent e) {
 		selectionStart = jta.getCaret().getDot();
@@ -324,6 +398,9 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 		chg = true;
 	}
 
+	/* (non-Javadoc)
+	 * @see java.awt.event.KeyListener#keyReleased(java.awt.event.KeyEvent)
+	 */
 	@Override
 	public void keyReleased(KeyEvent e) {
 		// Then we can use the previous saved position for DELETE and BACKSPACE
@@ -343,10 +420,16 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 		chg = true;
 	}
 
+	/* (non-Javadoc)
+	 * @see java.awt.event.KeyListener#keyTyped(java.awt.event.KeyEvent)
+	 */
 	public void keyTyped(KeyEvent e) {
 		chg = true;
 	}
 
+	/* (non-Javadoc)
+	 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+	 */
 	public void actionPerformed(ActionEvent e) {
 
 		if (e.getSource().equals(bttncut) || e.getSource().equals(ecut)) {
@@ -381,26 +464,44 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 		}
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.textEditor.ihm.GuiInterface#undo()
+	 */
 	public void undo() {
 		invoker.invoke(new Undo());
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.textEditor.ihm.GuiInterface#redo()
+	 */
 	public void redo() {
 		invoker.invoke(new Redo());
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.textEditor.ihm.GuiInterface#record()
+	 */
 	public void record() {
 		invoker.invoke(new Record());
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.ihm.GuiInterface#stop()
+	 */
 	public void stop() {
 		invoker.invoke(new Stop());
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.ihm.GuiInterface#play()
+	 */
 	public void play() {
 		invoker.invoke(new Play());
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.ihm.GuiInterface#exit()
+	 */
 	public void exit() {
 		if (chg == true) {
 			int res;
@@ -417,6 +518,9 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 		System.exit(0);
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.ihm.GuiInterface#open()
+	 */
 	public void open() {
 		JFileChooser jfc = new JFileChooser();
 		jfc.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -448,6 +552,9 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.ihm.GuiInterface#save()
+	 */
 	public void save() {
 		if (fname.equals("")) {
 			JFileChooser jfc = new JFileChooser();
@@ -464,6 +571,9 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 		logger.info(fname.toString());
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.ihm.GuiInterface#write()
+	 */
 	public void write() {
 		try {
 			FileWriter fw = new FileWriter(fname);
@@ -480,11 +590,10 @@ public class Gui extends JFrame implements GuiInterface, Observer, ActionListene
 
 	}
 
+	/* (non-Javadoc)
+	 * @see java.util.Observer#update(java.util.Observable, java.lang.Object)
+	 */
 	public void update(Observable observable, Object obj) {
-		if (((Core) observable).getBuffer() != jta.getText()) {
-			jta.setText(observable.toString());
-		}
-		jta.setCaretPosition(((Core) observable).getCurrentPosition());
 		bttnundo.setEnabled(((Core) observable).isUndo());
 		bttnredo.setEnabled(((Core) observable).isRedo());
 		eundo.setEnabled(((Core) observable).isUndo());

@@ -15,24 +15,59 @@ import com.textEditor.memento.Memento;
 import com.textEditor.memento.Pair;
 
 /**
+ * Core class
+ * Manage all the operation execution and notify observers when states have changed
+ * 
  * @(#) Core.java
  */
 
 public class Core extends Observable implements CoreInterface {
 
-	private StringBuffer buffer = new StringBuffer();
-	private String clipboard = new String();
 	private Log logger;
-	
-
+	/**
+	 * The text saver
+	 */
+	private StringBuffer buffer = new StringBuffer();
+	/**
+	 * The clipboard saver
+	 * Only one value at a time
+	 */
+	private String clipboard = new String();
+	/**
+	 * Return true if in undo/redo mode
+	 * Usefull to prevent operation saves twice
+	 */
 	private boolean undoRedo = false;
+	/**
+	 *  Manage the position of the undo/redo curso
+	 */
 	private int undoRedoPosition = -1;
+	/**
+	 * Saves the undo/redo states
+	 */
 	private CareTaker undoRedoCareTaker = new CareTaker();
+	/**
+	 * Return true if in recording mode
+	 */
 	private boolean recording = false;
+	/**
+	 * Saves recording states
+	 */
 	private CareTaker recordCareTaker = new CareTaker();
+	/**
+	 * Return true if in playing mode
+	 */
 	private boolean playing = false;
+	/**
+	 * Saves the current cursor position received by the Selection object at all time
+	 */
 	private int currentPosition = 0;
 	
+	/**
+	 * Nested class to allow show buffer and clipboard content while using the interface
+	 * For test purpose only
+	 *
+	 */
 	public class InternalGui extends JFrame implements Observer {
 
 		private static final long serialVersionUID = 1L;
@@ -65,30 +100,45 @@ public class Core extends Observable implements CoreInterface {
 	
 	public Core() {
 		logger = new Log(this);
-		InternalGui gui = new InternalGui(this);
-		addObserver(gui);
+		//InternalGui gui = new InternalGui(this);
+		//addObserver(gui);
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.core.CoreInterface#getBuffer()
+	 */
 	@Override
 	public String getBuffer() {
 		return buffer.toString();
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.core.CoreInterface#getClipboard()
+	 */
 	@Override
 	public String getClipboard() {
 		return clipboard.toString();
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.core.CoreInterface#isRecording()
+	 */
 	@Override
 	public boolean isRecording() {
 		return recording;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.core.CoreInterface#isPlaying()
+	 */
 	@Override
 	public boolean isPlaying() {
 		return playing;
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.textEditor.core.CoreInterface#play()
+	 */
 	@Override
 	public void play() {
 		playing = true;
@@ -97,8 +147,8 @@ public class Core extends Observable implements CoreInterface {
 
 			Selection position = new Selection();
 			Pair<String, Memento> reference = recordCareTaker.getMemento(i);
-			position.restoreFromMemento(reference.getR());
-			switch (reference.getL()) {
+			position.restoreFromMemento(reference.getMemento());
+			switch (reference.getReference()) {
             case "insert":
             	this.insert(position);
                 break;
@@ -122,6 +172,9 @@ public class Core extends Observable implements CoreInterface {
 		playing = false;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.core.CoreInterface#record()
+	 */
 	@Override
 	public void record() {
 		this.recording = true;
@@ -129,32 +182,45 @@ public class Core extends Observable implements CoreInterface {
 		logger.info("recording ...");
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.core.CoreInterface#stop()
+	 */
 	@Override
 	public void stop() {
 		this.recording = false;
 		logger.info("record stopped ...");
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.core.CoreInterface#isUndo()
+	 */
 	@Override
 	public boolean isUndo() {
 		return undoRedoPosition >= 0;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.core.CoreInterface#isRedo()
+	 */
 	@Override
 	public boolean isRedo() {
 		return undoRedoPosition < undoRedoCareTaker.size() - 1;
 	}
 	
+	/* (non-Javadoc)
+	 * @see com.textEditor.core.CoreInterface#undo()
+	 */
 	@Override
 	public void undo() {
 		undoRedo = true;
 		if (isUndo()) {
 			Selection position = new Selection();
 			Pair<String, Memento> reference = undoRedoCareTaker.getMemento(undoRedoPosition);
-			position.restoreFromMemento(reference.getR());
-			switch (reference.getL()) {
+			position.restoreFromMemento(reference.getMemento());
+			switch (reference.getReference()) {
 		        case "insert":
 		    		position.previous();
+		    		System.out.println(position.toJson().toString());
 		        	this.delete(position);
 		            break;
 		        case "delete":
@@ -171,7 +237,7 @@ public class Core extends Observable implements CoreInterface {
 		            break;
 		        case "copy":
 		    		position.previous();
-		        	this.copy(position);
+		        	this.delete(position);
 		            break;
 		        case "paste":
 		    		position.previous();
@@ -179,11 +245,14 @@ public class Core extends Observable implements CoreInterface {
 		            break;
 			}
 			undoRedoPosition--;
-			logger.info(reference.getL() + "::" + position.toJson().toString());
+			logger.info(reference.getReference() + "::" + position.toJson().toString());
 		}
 		undoRedo = false;
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.core.CoreInterface#redo()
+	 */
 	@Override
 	public void redo() {
 		undoRedo = true;
@@ -191,8 +260,8 @@ public class Core extends Observable implements CoreInterface {
 			undoRedoPosition++;
 			Selection position = new Selection();
 			Pair<String, Memento> reference = undoRedoCareTaker.getMemento(undoRedoPosition);
-			position.restoreFromMemento(reference.getR());
-			switch (reference.getL()) {
+			position.restoreFromMemento(reference.getMemento());
+			switch (reference.getReference()) {
 	        case "insert":
 	        	this.insert(position);
 	            break;
@@ -212,11 +281,18 @@ public class Core extends Observable implements CoreInterface {
 	        	this.paste(position);
 	            break;
 			}
-			logger.info(reference.getL() + "::" + position.toJson().toString());
+			logger.info(reference.getReference() + "::" + position.toJson().toString());
 		}
 		undoRedo = false;
 	}
 	
+	/**
+	 * Centralize the undo/redo changes
+	 * If an operation is done while the redo state is true, all succeding states will be lost
+	 * 
+	 * @param methodName
+	 * @param position
+	 */
 	private void saveUndoRedo(String methodName, Selection position) {
 		if (!undoRedo) {
 			if (isRedo()) {
@@ -228,6 +304,9 @@ public class Core extends Observable implements CoreInterface {
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.core.CoreInterface#insert(com.textEditor.core.Selection)
+	 */
 	@Override
 	public void insert(Selection position) {
 		saveUndoRedo("insert", position);
@@ -236,6 +315,9 @@ public class Core extends Observable implements CoreInterface {
 		setCurrentPosition(position.getStart() + position.getContent().length());
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.core.CoreInterface#delete(com.textEditor.core.Selection)
+	 */
 	@Override
 	public void delete(Selection position) {
 		saveUndoRedo("delete", position);
@@ -247,6 +329,9 @@ public class Core extends Observable implements CoreInterface {
 		setCurrentPosition(position.getStart());
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.core.CoreInterface#replace(com.textEditor.core.Selection)
+	 */
 	@Override
 	public void replace(Selection position) {
 		saveUndoRedo("replace", position);
@@ -258,15 +343,21 @@ public class Core extends Observable implements CoreInterface {
 		setCurrentPosition(position.getStart() + position.getContent().length());
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.core.CoreInterface#cut(com.textEditor.core.Selection)
+	 */
 	@Override
 	public void cut(Selection position) {
-		saveUndoRedo("copy", position);
+		saveUndoRedo("cut", position);
 		logger.info(position.toJson().toString());
-		clipboard = position.getContent();
+		clipboard = buffer.substring(position.getStart(), position.getEnd());
 		buffer.delete(position.getStart(), position.getEnd());
-		setCurrentPosition(position.getStart());
+		setCurrentPosition(position.getStart() + clipboard.length());
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.core.CoreInterface#copy(com.textEditor.core.Selection)
+	 */
 	@Override
 	public void copy(Selection position) {
 		saveUndoRedo("copy", position);
@@ -280,24 +371,45 @@ public class Core extends Observable implements CoreInterface {
 		setCurrentPosition(position.getStart() + position.getContent().length());
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.core.CoreInterface#paste(com.textEditor.core.Selection)
+	 */
 	@Override
 	public void paste(Selection position) {
+		saveUndoRedo("paste", position);
 		logger.fine(position.toString());
 		if (clipboard == null) {
 			logger.warning("Clipboard is not set !");
 		}
-		buffer.insert(position.getStart(), position.getContent());
+		buffer.insert(position.getStart(), clipboard);
+		position.setPrevContent(position.getContent());
 		position.setContent(clipboard);
 		logger.info(position.toJson().toString());
 		setCurrentPosition(position.getStart() + position.getContent().length());
 	}
 
+	/**
+	 * Return the current position of the cursor after or before an operation
+	 * @return
+	 */
+	public int getCurrentPosition() {
+		return currentPosition;
+	}
+	
+	/**
+	 * Set the position of the cursor after an operation
+	 * Also send the state's change signal to all observers
+	 * @param pos
+	 */
 	private void setCurrentPosition(int pos) {
 		currentPosition = pos;		
 		setChanged();
 		notifyObservers();
 	}
 
+	/* (non-Javadoc)
+	 * @see com.textEditor.core.CoreInterface#reset()
+	 */
 	@Override
 	public void reset() {
 		undoRedoCareTaker = new CareTaker();
@@ -312,8 +424,5 @@ public class Core extends Observable implements CoreInterface {
 		return buffer.toString();
 	}
 
-	public int getCurrentPosition() {
-		return currentPosition;
-	}
 
 }

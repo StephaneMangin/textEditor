@@ -2,6 +2,8 @@
  * 
  */
 /**
+ * Manage the views of the application
+ * 
  * @author blacknight
  *
  */

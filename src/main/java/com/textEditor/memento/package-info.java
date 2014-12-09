@@ -2,6 +2,8 @@
  * 
  */
 /**
+ * Manage datas persistency
+ * 
  * @author blacknight
  *
  */

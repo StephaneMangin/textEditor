@@ -1,14 +1,17 @@
 package com.textEditor.memento;
 
-public class Pair<L,R> {
-    private L l;
-    private R r;
-    public Pair(L l, R r){
-        this.l = l;
-        this.r = r;
+@SuppressWarnings("hiding")
+public class Pair<String,Memento> {
+	
+	protected String reference;
+    public Memento memento;
+    
+    public Pair(String reference, Memento memento){
+        this.reference = reference;
+        this.memento = memento;
     }
-    public L getL(){ return l; }
-    public R getR(){ return r; }
-    public void setL(L l){ this.l = l; }
-    public void setR(R r){ this.r = r; }
+    public String getReference(){ return reference; }
+    public Memento getMemento(){ return memento; }
+    public void setReference(String l){ this.reference = l; }
+    public void setMemento(Memento r){ this.memento = r; }
 }
